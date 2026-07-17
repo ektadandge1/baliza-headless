@@ -1,4 +1,4 @@
-import {Suspense} from 'react';
+import {Suspense, useState} from 'react';
 import {Await, NavLink, useAsyncValue} from 'react-router';
 import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
@@ -7,77 +7,197 @@ import {useAside} from '~/components/Aside';
  * @param {HeaderProps}
  */
 export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
-  const {shop, menu} = header;
+  const {shop} = header;
+
   return (
-    <header className="header">
-      <NavLink prefetch="intent" to="/" style={activeLinkStyle} end>
-        <strong>{shop.name}</strong>
-      </NavLink>
-      <HeaderMenu
-        menu={menu}
-        viewport="desktop"
-        primaryDomainUrl={header.shop.primaryDomain.url}
-        publicStoreDomain={publicStoreDomain}
-      />
-      <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
-    </header>
+    <>
+      <AnnouncementBar />
+      <div className="header-wrapper">
+        <header className="header" aria-label="Store header">
+          <div className="header-section header-section--left">
+            <MobileMenuToggle />
+            <HeaderMenu
+              viewport="desktop"
+              primaryDomainUrl={header.shop.primaryDomain.url}
+              publicStoreDomain={publicStoreDomain}
+            />
+          </div>
+
+          <div className="header-logo">
+            <NavLink prefetch="intent" to="/" end aria-label={`${shop.name} home`}>
+              <span className="logo-mark">B</span>
+              <span className="logo-text">{shop.name}</span>
+            </NavLink>
+          </div>
+
+          <HeaderActions isLoggedIn={isLoggedIn} cart={cart} />
+        </header>
+
+        <nav className="header-category-rail" aria-label="Featured categories">
+          {FEATURED_LINKS.map((item) => (
+            <NavLink key={item.id} to={item.url} prefetch="intent">
+              {item.title}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    </>
+  );
+}
+
+function AnnouncementBar() {
+  return (
+    <div className="announcement-bar" aria-label="Store announcement">
+      <p>
+        Free shipping over $150 <span aria-hidden="true">/</span> Premium cotton essentials <span aria-hidden="true">/</span>{' '}
+        <a href="/collections/all">Shop the collection</a>
+      </p>
+    </div>
   );
 }
 
 /**
  * @param {{
- *   menu: HeaderProps['header']['menu'];
  *   primaryDomainUrl: HeaderProps['header']['shop']['primaryDomain']['url'];
  *   viewport: Viewport;
  *   publicStoreDomain: HeaderProps['publicStoreDomain'];
  * }}
  */
-export function HeaderMenu({
-  menu,
-  primaryDomainUrl,
-  viewport,
-  publicStoreDomain,
-}) {
-  const className = `header-menu-${viewport}`;
-  const {close} = useAside();
+export function HeaderMenu({primaryDomainUrl, viewport, publicStoreDomain}) {
+  if (viewport === 'mobile') {
+    return (
+      <MobileNav
+        primaryDomainUrl={primaryDomainUrl}
+        publicStoreDomain={publicStoreDomain}
+      />
+    );
+  }
 
   return (
-    <nav className={className} role="navigation">
-      {viewport === 'mobile' && (
-        <NavLink
-          end
-          onClick={close}
-          prefetch="intent"
-          style={activeLinkStyle}
-          to="/"
-        >
+    <nav className="header-nav-desktop" role="navigation" aria-label="Main navigation">
+      {STORE_HEADER_MENU.items.map((item) => (
+        <DesktopNavItem key={item.id} item={item} />
+      ))}
+    </nav>
+  );
+}
+
+function DesktopNavItem({item}) {
+  const hasChildren = item.items.length > 0;
+
+  return (
+    <div className={`nav-item ${hasChildren ? 'nav-item--has-menu' : ''}`}>
+      <NavLink end prefetch="intent" to={item.url}>
+        <span>{item.title}</span>
+        {hasChildren && (
+          <svg className="nav-chevron" width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+            <path d="M1 3L4 6L7 3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+          </svg>
+        )}
+      </NavLink>
+
+      {hasChildren && <MegaMenu item={item} />}
+    </div>
+  );
+}
+
+function MegaMenu({item}) {
+  return (
+    <div className="mega-menu" role="menu">
+      <div className="mega-menu-inner">
+        <div className="mega-menu-editorial">
+          <span className="mega-menu-kicker">Curated edit</span>
+          <h3>{item.title}</h3>
+          <p>Clean silhouettes, premium everyday fits, and statement graphics for a modern clothing store.</p>
+          <NavLink to={item.url} prefetch="intent">
+            View all
+            <span aria-hidden="true">&rarr;</span>
+          </NavLink>
+        </div>
+
+        <div className="mega-menu-grid">
+          {item.items.map((child) => (
+            <NavLink to={child.url} className="mega-menu-item" key={child.id} prefetch="intent">
+              <span className="mega-menu-item-title">{child.title}</span>
+              <span className="mega-menu-item-desc">{child.description}</span>
+            </NavLink>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileNav() {
+  const {close} = useAside();
+  const [openSubmenu, setOpenSubmenu] = useState(null);
+
+  const handleToggle = (id) => {
+    setOpenSubmenu(openSubmenu === id ? null : id);
+  };
+
+  return (
+    <nav className="mobile-nav" role="navigation" aria-label="Mobile navigation">
+      <div className="mobile-nav-header">
+        <span className="mobile-nav-title">Menu</span>
+        <span className="mobile-nav-subtitle">Baliza essentials</span>
+      </div>
+
+      <div className="mobile-nav-items">
+        <NavLink end onClick={close} prefetch="intent" to="/" className="mobile-nav-item mobile-nav-item--home">
           Home
         </NavLink>
-      )}
-      {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
-        if (!item.url) return null;
 
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
-        return (
-          <NavLink
-            className="header-menu-item"
-            end
-            key={item.id}
-            onClick={close}
-            prefetch="intent"
-            style={activeLinkStyle}
-            to={url}
-          >
-            {item.title}
-          </NavLink>
-        );
-      })}
+        {STORE_HEADER_MENU.items.map((item) => {
+          const hasChildren = item.items.length > 0;
+
+          if (hasChildren) {
+            return (
+              <div className="mobile-nav-group" key={item.id}>
+                <button
+                  className="mobile-nav-toggle"
+                  onClick={() => handleToggle(item.id)}
+                  aria-expanded={openSubmenu === item.id}
+                >
+                  <span>{item.title}</span>
+                  <svg
+                    className={`mobile-nav-arrow ${openSubmenu === item.id ? 'open' : ''}`}
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="M2 4L5 7L8 4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+                  </svg>
+                </button>
+
+                <div className={`mobile-nav-submenu ${openSubmenu === item.id ? 'open' : ''}`}>
+                  {item.items.map((child) => (
+                    <NavLink key={child.id} to={child.url} onClick={close} className="mobile-nav-subitem" prefetch="intent">
+                      <span>{child.title}</span>
+                      <small>{child.description}</small>
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <NavLink className="mobile-nav-item" end key={item.id} onClick={close} prefetch="intent" to={item.url}>
+              {item.title}
+            </NavLink>
+          );
+        })}
+      </div>
+
+      <div className="mobile-nav-footer">
+        <NavLink to="/account" onClick={close} className="mobile-nav-footer-link">
+          <AccountIcon />
+          <span>My Account</span>
+        </NavLink>
+      </div>
     </nav>
   );
 }
@@ -85,14 +205,14 @@ export function HeaderMenu({
 /**
  * @param {Pick<HeaderProps, 'isLoggedIn' | 'cart'>}
  */
-function HeaderCtas({isLoggedIn, cart}) {
+function HeaderActions({isLoggedIn, cart}) {
   return (
-    <nav className="header-ctas" role="navigation">
-      <HeaderMenuMobileToggle />
-      <NavLink prefetch="intent" to="/account" style={activeLinkStyle}>
-        <Suspense fallback="Sign in">
-          <Await resolve={isLoggedIn} errorElement="Sign in">
-            {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign in')}
+    <nav className="header-actions" aria-label="Header actions">
+      <NavLink prefetch="intent" to="/account" className="header-action-link header-action-link--account">
+        <AccountIcon />
+        <Suspense fallback={<span>Sign in</span>}>
+          <Await resolve={isLoggedIn} errorElement={<span>Sign in</span>}>
+            {(isLoggedIn) => <span>{isLoggedIn ? 'Account' : 'Sign in'}</span>}
           </Await>
         </Suspense>
       </NavLink>
@@ -102,14 +222,15 @@ function HeaderCtas({isLoggedIn, cart}) {
   );
 }
 
-function HeaderMenuMobileToggle() {
+function MobileMenuToggle() {
   const {open} = useAside();
   return (
-    <button
-      className="header-menu-mobile-toggle reset"
-      onClick={() => open('mobile')}
-    >
-      <h3>☰</h3>
+    <button className="mobile-menu-toggle" onClick={() => open('mobile')} aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true">
+        <line x1="4" y1="7" x2="20" y2="7" />
+        <line x1="4" y1="12" x2="20" y2="12" />
+        <line x1="4" y1="17" x2="20" y2="17" />
+      </svg>
     </button>
   );
 }
@@ -117,9 +238,21 @@ function HeaderMenuMobileToggle() {
 function SearchToggle() {
   const {open} = useAside();
   return (
-    <button className="reset" onClick={() => open('search')}>
-      Search
+    <button className="header-action-btn" onClick={() => open('search')} aria-label="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M16.5 16.5L21 21" strokeLinecap="round" />
+      </svg>
     </button>
+  );
+}
+
+function AccountIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20c1.2-3.8 4.1-5.8 7.5-5.8s6.3 2 7.5 5.8" strokeLinecap="round" />
+    </svg>
   );
 }
 
@@ -131,10 +264,10 @@ function CartBadge({count}) {
   const {publish, shop, cart, prevCart} = useAnalytics();
 
   return (
-    <a
-      href="/cart"
-      onClick={(e) => {
-        e.preventDefault();
+    <button
+      className="header-action-btn header-action-btn--cart"
+      onClick={(event) => {
+        event.preventDefault();
         open('cart');
         publish('cart_viewed', {
           cart,
@@ -143,9 +276,14 @@ function CartBadge({count}) {
           url: window.location.href || '',
         });
       }}
+      aria-label={`Shopping bag (${count} items)`}
     >
-      Cart <span aria-label={`(items: ${count})`}>{count}</span>
-    </a>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true">
+        <path d="M6.5 7.5h11l-1 13h-9l-1-13Z" strokeLinejoin="round" />
+        <path d="M9 7.5V6a3 3 0 0 1 6 0v1.5" strokeLinecap="round" />
+      </svg>
+      <span className="cart-count">{count}</span>
+    </button>
   );
 }
 
@@ -168,60 +306,73 @@ function CartBanner() {
   return <CartBadge count={cart?.totalQuantity ?? 0} />;
 }
 
-const FALLBACK_HEADER_MENU = {
-  id: 'gid://shopify/Menu/199655587896',
+const STORE_HEADER_MENU = {
   items: [
     {
-      id: 'gid://shopify/MenuItem/461609500728',
-      resourceId: null,
-      tags: [],
-      title: 'Collections',
-      type: 'HTTP',
-      url: '/collections',
+      id: 'new-in',
+      title: 'New In',
+      url: '/collections/new-arrivals',
       items: [],
     },
     {
-      id: 'gid://shopify/MenuItem/461609533496',
-      resourceId: null,
-      tags: [],
-      title: 'Blog',
-      type: 'HTTP',
+      id: 'shop',
+      title: 'Shop',
+      url: '/collections/all',
+      items: [
+        {
+          id: 'all-products',
+          title: 'All Products',
+          description: 'Complete clothing catalog',
+          url: '/collections/all',
+        },
+        {
+          id: 'graphic-tees',
+          title: 'Graphic Tees',
+          description: 'Statement prints and artwork',
+          url: '/collections/graphic-tees',
+        },
+        {
+          id: 'oversized',
+          title: 'Oversized Fits',
+          description: 'Relaxed premium silhouettes',
+          url: '/collections/oversized',
+        },
+        {
+          id: 'polo-tees',
+          title: 'Polo T-Shirts',
+          description: 'Clean everyday classics',
+          url: '/collections/polo-shirts',
+        },
+      ],
+    },
+    {
+      id: 'bestsellers',
+      title: 'Bestsellers',
+      url: '/collections/best-sellers',
+      items: [],
+    },
+    {
+      id: 'journal',
+      title: 'Journal',
       url: '/blogs/journal',
       items: [],
     },
     {
-      id: 'gid://shopify/MenuItem/461609566264',
-      resourceId: null,
-      tags: [],
-      title: 'Policies',
-      type: 'HTTP',
-      url: '/policies',
-      items: [],
-    },
-    {
-      id: 'gid://shopify/MenuItem/461609599032',
-      resourceId: 'gid://shopify/Page/92591030328',
-      tags: [],
+      id: 'about',
       title: 'About',
-      type: 'PAGE',
       url: '/pages/about',
       items: [],
     },
   ],
 };
 
-/**
- * @param {{
- *   isActive: boolean;
- *   isPending: boolean;
- * }}
- */
-function activeLinkStyle({isActive, isPending}) {
-  return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'black',
-  };
-}
+const FEATURED_LINKS = [
+  {id: 'tees', title: 'T-Shirts', url: '/collections/t-shirts'},
+  {id: 'graphics', title: 'Graphics', url: '/collections/graphic-tees'},
+  {id: 'polos', title: 'Polos', url: '/collections/polo-shirts'},
+  {id: 'essentials', title: 'Essentials', url: '/collections/essentials'},
+  {id: 'sale', title: 'Sale', url: '/collections/sale'},
+];
 
 /** @typedef {'desktop' | 'mobile'} Viewport */
 /**

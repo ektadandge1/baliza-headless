@@ -44,12 +44,14 @@ export function Aside({children, heading, type}) {
       role="dialog"
       aria-labelledby={id}
     >
-      <button className="close-outside" onClick={close} />
+      <button className="close-outside" onClick={close} aria-label="Close menu" />
       <aside>
         <header>
           <h3 id={id}>{heading}</h3>
-          <button className="close reset" onClick={close} aria-label="Close">
-            &times;
+          <button className="close" onClick={close} aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </header>
         <main>{children}</main>

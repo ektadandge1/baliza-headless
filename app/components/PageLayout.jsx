@@ -49,8 +49,8 @@ export function PageLayout({
  */
 function CartAside({cart}) {
   return (
-    <Aside type="cart" heading="CART">
-      <Suspense fallback={<p>Loading cart ...</p>}>
+    <Aside type="cart" heading="Shopping Bag">
+      <Suspense fallback={<div style={{textAlign: 'center', padding: '2rem', color: '#999'}}>Loading cart...</div>}>
         <Await resolve={cart}>
           {(cart) => {
             return <CartMain cart={cart} layout="aside" />;
@@ -64,9 +64,8 @@ function CartAside({cart}) {
 function SearchAside() {
   const queriesDatalistId = useId();
   return (
-    <Aside type="search" heading="SEARCH">
+    <Aside type="search" heading="Search">
       <div className="predictive-search">
-        <br />
         <SearchFormPredictive>
           {({fetchResults, goToSearch, inputRef}) => (
             <>
@@ -74,13 +73,40 @@ function SearchAside() {
                 name="q"
                 onChange={fetchResults}
                 onFocus={fetchResults}
-                placeholder="Search"
+                placeholder="What are you looking for?"
                 ref={inputRef}
                 type="search"
                 list={queriesDatalistId}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: '1px solid #e5e5e5',
+                  borderRadius: '6px',
+                  fontSize: '15px',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
               />
-              &nbsp;
-              <button onClick={goToSearch}>Search</button>
+              <button
+                onClick={goToSearch}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  marginTop: '8px',
+                  background: '#111',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Search
+              </button>
             </>
           )}
         </SearchFormPredictive>
@@ -90,7 +116,7 @@ function SearchAside() {
             const {articles, collections, pages, products, queries} = items;
 
             if (state === 'loading' && term.current) {
-              return <div>Loading...</div>;
+              return <div style={{textAlign: 'center', padding: '2rem', color: '#999'}}>Loading...</div>;
             }
 
             if (!total) {
@@ -127,11 +153,18 @@ function SearchAside() {
                   <Link
                     onClick={closeSearch}
                     to={`${SEARCH_ENDPOINT}?q=${term.current}`}
+                    style={{
+                      display: 'block',
+                      textAlign: 'center',
+                      padding: '12px',
+                      marginTop: '16px',
+                      color: '#c9a96e',
+                      fontWeight: '600',
+                      textDecoration: 'none',
+                      fontSize: '14px',
+                    }}
                   >
-                    <p>
-                      View all results for <q>{term.current}</q>
-                      &nbsp; →
-                    </p>
+                    View all results for &ldquo;{term.current}&rdquo; &rarr;
                   </Link>
                 ) : null}
               </>
@@ -153,7 +186,7 @@ function MobileMenuAside({header, publicStoreDomain}) {
   return (
     header.menu &&
     header.shop.primaryDomain?.url && (
-      <Aside type="mobile" heading="MENU">
+      <Aside type="mobile" heading="Menu">
         <HeaderMenu
           menu={header.menu}
           viewport="mobile"
