@@ -11,7 +11,7 @@ import {useEffect, useRef, useState} from 'react';
  * @type {Route.MetaFunction}
  */
 export const meta = () => {
-  return [{title: 'Sign In'}];
+  return [{title: 'Forgot Password'}];
 };
 
 /**
@@ -28,7 +28,6 @@ export async function loader({context}) {
  * @param {Route.ActionArgs}
  */
 export async function action({request, context}) {
-  const {customerAccount} = context;
   const formData = await request.formData();
   const email = String(formData.get('email') || '').trim();
 
@@ -36,25 +35,28 @@ export async function action({request, context}) {
     return {error: 'Please enter a valid email address.'};
   }
 
-  return customerAccount.login({
+  // Redirect to login with the email as loginHint.
+  // On Shopify's login page, the user can click "Forgot password"
+  // to receive a password reset email.
+  return context.customerAccount.login({
     countryCode: context.storefront.i18n.country,
     loginHint: email,
     loginHintMode: 'none',
   });
 }
 
-export default function Login() {
+export default function Recover() {
   /** @type {LoaderReturnData} */
   const loaderData = useLoaderData();
 
   if (loaderData?.redirect) {
-    return <LoginRedirect redirect={loaderData.redirect} />;
+    return <RecoverRedirect redirect={loaderData.redirect} />;
   }
 
-  return <LoginForm />;
+  return <RecoverForm />;
 }
 
-function LoginRedirect({redirect}) {
+function RecoverRedirect({redirect}) {
   const navigate = useNavigate();
   const [count, setCount] = useState(3);
 
@@ -88,18 +90,19 @@ function LoginRedirect({redirect}) {
   );
 }
 
-function LoginForm() {
+function RecoverForm() {
   /** @type {ActionReturnData} */
   const action = useActionData();
   const [searchParams] = useSearchParams();
   const emailRef = useRef(null);
 
-  const returnTo = searchParams.get('return_to') || '/account';
+  const returnTo = searchParams.get('return_to') || '/account/login';
 
   return (
     <AuthShell>
       <AuthCard
-        title="Sign in"
+        eyebrow="ACCOUNT"
+        title="Reset password"
         subtitle="Enter your email to continue."
       >
         <Form method="POST" className="auth-form">
@@ -135,8 +138,8 @@ function LoginForm() {
         </Form>
 
         <div className="auth-links">
-          <a href="/account/recover" className="auth-link auth-link--forgot">
-            Forgot your password?
+          <a href="/account/login" className="auth-link auth-link--back">
+            Back to sign in
           </a>
         </div>
       </AuthCard>
@@ -146,7 +149,7 @@ function LoginForm() {
 
 function AuthShell({children}) {
   return (
-    <section className="auth-shell auth-shell--login">
+    <section className="auth-shell auth-shell--recover">
       <div className="auth-shell__container">
         <div className="auth-shell__bg" aria-hidden="true" />
         <div className="auth-shell__aside" aria-hidden="true" />
@@ -160,11 +163,11 @@ function AuthShell({children}) {
   );
 }
 
-function AuthCard({title, subtitle, children}) {
+function AuthCard({eyebrow, title, subtitle, children}) {
   return (
     <div className="auth-card">
       <div className="auth-card__head">
-        <span className="auth-card__eyebrow">BALIZA ACCOUNT</span>
+        <span className="auth-card__eyebrow">{eyebrow || 'BALIZA ACCOUNT'}</span>
         <h1 className="auth-card__title">{title}</h1>
         <p className="auth-card__subtitle">{subtitle}</p>
       </div>
@@ -176,6 +179,6 @@ function AuthCard({title, subtitle, children}) {
 /** @typedef {import('react-router').ReactNode} ReactNode */
 /** @typedef {{redirect?: string}} LoaderReturnData */
 /** @typedef {{error?: string}} ActionReturnData */
-/** @typedef {import('./+types/account_.login').Route} Route */
+/** @typedef {import('./+types/account_.recover').Route} Route */
 /** @typedef {ReturnType<typeof useLoaderData<typeof loader>>} LoaderReturnData */
 /** @typedef {ReturnType<typeof useActionData<typeof action>>} ActionReturnData */

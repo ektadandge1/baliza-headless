@@ -15,8 +15,14 @@ export function CartSummary({cart, layout}) {
   const giftCardInputId = useId();
 
   return (
-    <div aria-labelledby={summaryId} className={className}>
-      <h4 id={summaryId}>Totals</h4>
+    <div aria-labelledby={summaryId} className={`cart-summary ${className}`}>
+      <div className="cart-summary-heading">
+        <div>
+          <span className="cart-summary-eyebrow">Order overview</span>
+          <h4 id={summaryId}>Your total</h4>
+        </div>
+        <span className="cart-summary-secure">Secure checkout</span>
+      </div>
       <dl role="group" className="cart-subtotal">
         <dt>Subtotal</dt>
         <dd>
@@ -38,6 +44,14 @@ export function CartSummary({cart, layout}) {
         giftCardInputId={giftCardInputId}
       />
       <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
+      {layout === 'aside' && (
+        <div className="cart-shipping-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          Free shipping on orders over $100
+        </div>
+      )}
     </div>
   );
 }
@@ -49,11 +63,11 @@ function CartCheckoutActions({checkoutUrl}) {
   if (!checkoutUrl) return null;
 
   return (
-    <div>
-      <a href={checkoutUrl} target="_self">
-        <p>Continue to Checkout &rarr;</p>
+    <div className="cart-checkout-wrap">
+      <a className="cart-checkout-btn" href={checkoutUrl} target="_self">
+        Continue to checkout <span aria-hidden="true">&rarr;</span>
       </a>
-      <br />
+      <p className="cart-checkout-caption">Taxes and shipping calculated at checkout</p>
     </div>
   );
 }

@@ -1,0 +1,55 @@
+[33mThe `envFile` option is deprecated, please use `envDir: false` instead.[39m
+[33mThe `envFile` option is deprecated, please use `envDir: false` instead.[39m
+
+Environment variables injected into MiniOxygen:
+
+PUBLIC_STOREFRONT_ID                    from Oxygen
+PUBLIC_STOREFRONT_API_TOKEN             from Oxygen
+PUBLIC_STORE_DOMAIN                     from Oxygen
+PRIVATE_STOREFRONT_API_TOKEN            from Oxygen
+PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID   from Oxygen
+PUBLIC_CUSTOMER_ACCOUNT_API_URL         from Oxygen
+SHOP_ID                                 from Oxygen
+SESSION_SECRET                          from Oxygen
+╭─ success ────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  View shopify-headless-baliza app: http://localhost:3002/                    │
+│                                                                              │
+│  View GraphiQL API browser:                                                  │
+│  http://localhost:3002/graphiql                                              │
+│                                                                              │
+│  View server network requests:                                               │
+│  http://localhost:3002/subrequest-profiler                                   │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Warning: React does not recognize the `fetchPriority` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `fetchpriority` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+    at img
+    at article
+    at div
+    at section
+    at EnterpriseBannerSection
+    at div
+    at Homepage (C:/Users/User/shopify-headless/shopify-headless-baliza/app/routes/_index.jsx:76:55)
+    at WithComponentProps2 (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:5055:17)
+    at RenderedRoute (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:4247:26)
+    at Outlet (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:4874:25)
+    at main
+    at AsideProvider (C:/Users/User/shopify-headless/shopify-headless-baliza/app/components/Aside.jsx:109:43)
+    at PageLayout (C:/Users/User/shopify-headless/shopify-headless-baliza/app/components/PageLayout.jsx:24:23)
+    at AnalyticsProvider (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/@shopify/hydrogen/dist/development/index.js?v=b30049c8:1069:13)
+    at App (C:/Users/User/shopify-headless/shopify-headless-baliza/app/root.jsx:247:60)
+    at WithComponentProps2 (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:5055:17)
+    at body
+    at html
+    at Layout (C:/Users/User/shopify-headless/shopify-headless-baliza/app/root.jsx:167:3)
+    at RenderedRoute (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:4247:26)
+    at RenderErrorBoundary (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:4183:3)
+    at DataRoutes2 (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:4814:24)
+    at Router (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:4879:29)
+    at StaticRouterProvider (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:7876:33)
+    at RemixErrorBoundary (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:7173:3)
+    at ServerRouter (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/.vite/deps_ssr/react-router.js?v=b30049c8:8087:25)
+    at Provider (C:/Users/User/shopify-headless/shopify-headless-baliza/node_modules/@shopify/hydrogen/dist/development/index.js?v=b30049c8:4634:23)
+   GET  200  render  /  820ms
+   GET  200  render  /  63ms

@@ -40,7 +40,7 @@ export function Aside({children, heading, type}) {
   return (
     <div
       aria-modal
-      className={`overlay ${expanded ? 'expanded' : ''}`}
+      className={`overlay overlay--${type} ${expanded ? 'expanded' : ''}`}
       role="dialog"
       aria-labelledby={id}
     >
@@ -86,7 +86,7 @@ export function useAside() {
   return aside;
 }
 
-/** @typedef {'search' | 'cart' | 'mobile' | 'closed'} AsideType */
+/** @typedef {'search' | 'cart' | 'mobile' | 'wishlist' | 'closed'} AsideType */
 /**
  * @typedef {{
  *   type: AsideType;

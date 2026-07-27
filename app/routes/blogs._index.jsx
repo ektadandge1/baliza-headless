@@ -1,33 +1,18 @@
 import {Link, useLoaderData} from 'react-router';
-import {getPaginationVariables} from '@shopify/hydrogen';
+import {Image, getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = () => {
-  return [{title: `Hydrogen | Blogs`}];
+  return [{title: 'Journal | Baliza'}];
 };
 
 /**
  * @param {Route.LoaderArgs} args
  */
-export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
-}
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {Route.LoaderArgs}
- */
-async function loadCriticalData({context, request}) {
+export async function loader({context, request}) {
   const paginationVariables = getPaginationVariables(request, {
     pageBy: 10,
   });
@@ -38,48 +23,86 @@ async function loadCriticalData({context, request}) {
         ...paginationVariables,
       },
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
 
   return {blogs};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
-function loadDeferredData({context}) {
-  return {};
-}
-
 export default function Blogs() {
-  /** @type {LoaderReturnData} */
   const {blogs} = useLoaderData();
 
   return (
-    <div className="blogs">
-      <h1>Blogs</h1>
+    <section className="blogs-page">
+      <header className="blogs-hero">
+        <span className="blogs-hero__eyebrow">Baliza</span>
+        <h1>Journal</h1>
+        <p>
+          Style guides, care tips, trend reports, and the stories behind our
+          collections.
+        </p>
+      </header>
+
       <div className="blogs-grid">
         <PaginatedResourceSection connection={blogs}>
-          {({node: blog}) => (
+          {({node: blog, index}) => (
             <Link
-              className="blog"
+              className="blog-card"
               key={blog.handle}
               prefetch="intent"
               to={`/blogs/${blog.handle}`}
             >
-              <h2>{blog.title}</h2>
+              {blog.articles.nodes[0]?.image && (
+                <div className="blog-card__image">
+                  <Image
+                    alt={blog.articles.nodes[0].image.altText || blog.title}
+                    aspectRatio="3/2"
+                    data={blog.articles.nodes[0].image}
+                    loading={index < 2 ? 'eager' : 'lazy'}
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                  />
+                </div>
+              )}
+              <div className="blog-card__body">
+                <span className="blog-card__label">{blog.title}</span>
+                <h2 className="blog-card__title">
+                  {blog.articles.nodes[0]?.title || blog.title}
+                </h2>
+                <p className="blog-card__excerpt">
+                  {blog.articles.nodes[0]
+                    ? stripHtml(blog.articles.nodes[0].contentHtml).slice(
+                        0,
+                        140,
+                      ) + '...'
+                    : 'Explore our latest articles.'}
+                </p>
+                <span className="blog-card__link">
+                  Read more
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </div>
             </Link>
           )}
         </PaginatedResourceSection>
       </div>
-    </div>
+    </section>
   );
 }
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/blog
+function stripHtml(html) {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+}
+
 const BLOGS_QUERY = `#graphql
   query Blogs(
     $country: CountryCode
@@ -108,13 +131,24 @@ const BLOGS_QUERY = `#graphql
           title
           description
         }
+        articles(first: 1) {
+          nodes {
+            title
+            handle
+            contentHtml
+            image {
+              id
+              altText
+              url
+              width
+              height
+            }
+          }
+        }
       }
     }
   }
 `;
 
-/** @typedef {BlogsQuery['blogs']['nodes'][0]} BlogNode */
-
 /** @typedef {import('./+types/blogs._index').Route} Route */
-/** @typedef {import('storefrontapi.generated').BlogsQuery} BlogsQuery */
 /** @typedef {ReturnType<typeof useLoaderData<typeof loader>>} LoaderReturnData */

@@ -4,14 +4,16 @@ import {CartForm} from '@shopify/hydrogen';
  * @param {{
  *   analytics?: unknown;
  *   children: React.ReactNode;
+ *   className?: string;
  *   disabled?: boolean;
  *   lines: Array<OptimisticCartLineInput>;
- *   onClick?: () => void;
+ *   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
  * }}
  */
 export function AddToCartButton({
   analytics,
   children,
+  className,
   disabled,
   lines,
   onClick,
@@ -27,6 +29,7 @@ export function AddToCartButton({
           />
           <button
             type="submit"
+            className={className}
             onClick={onClick}
             disabled={disabled ?? fetcher.state !== 'idle'}
           >

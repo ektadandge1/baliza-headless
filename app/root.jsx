@@ -10,11 +10,15 @@ import {
   useRouteLoaderData,
 } from 'react-router';
 import favicon from '~/assets/favicon.svg';
-import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {FOOTER_QUERY, HEADER_QUERY, LOCALIZATION_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import tailwindCss from './styles/tailwind.css?url';
 import {PageLayout} from './components/PageLayout';
+import {JudgeMeScript} from './components/JudgeMe';
+import {MarketingPopup} from './components/MarketingPopup';
+import {ScrollNotice} from './components/ScrollNotice';
+import {WishlistProvider} from './components/WishlistProvider';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -111,17 +115,33 @@ export async function loader(args) {
 async function loadCriticalData({context}) {
   const {storefront} = context;
 
-  const [header] = await Promise.all([
+  const judgeMe = {
+    enabled: Boolean(
+      context.env.JUDGEME_SHOP_DOMAIN && context.env.JUDGEME_PUBLIC_TOKEN,
+    ),
+    shopDomain: context.env.JUDGEME_SHOP_DOMAIN,
+    publicToken: context.env.JUDGEME_PUBLIC_TOKEN,
+  };
+
+  const [header, localization] = await Promise.all([
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
         headerMenuHandle: 'main-menu', // Adjust to your header menu handle
       },
     }),
+    storefront.query(LOCALIZATION_QUERY, {
+      cache: storefront.CacheLong(),
+    }),
     // Add other queries here, so that they are loaded in parallel
   ]);
 
-  return {header};
+  return {
+    header,
+    localization: localization.localization,
+    judgeMe,
+    discountCode: context.env.DISCOUNT_CODE || 'WELCOME10',
+  };
 }
 
 /**
@@ -193,9 +213,17 @@ export default function App() {
       shop={data.shop}
       consent={data.consent}
     >
-      <PageLayout {...data}>
-        <Outlet />
-      </PageLayout>
+      <JudgeMeScript
+        shopDomain={data.judgeMe?.shopDomain}
+        publicToken={data.judgeMe?.publicToken}
+      />
+      <MarketingPopup discountCode={data.discountCode} />
+      <ScrollNotice discountCode={data.discountCode} />
+      <WishlistProvider>
+        <PageLayout {...data}>
+          <Outlet />
+        </PageLayout>
+      </WishlistProvider>
     </Analytics.Provider>
   );
 }

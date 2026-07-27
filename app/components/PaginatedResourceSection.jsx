@@ -1,9 +1,7 @@
-import * as React from 'react';
 import {Pagination} from '@shopify/hydrogen';
 
 /**
- * <PaginatedResourceSection> encapsulates the previous and next pagination behaviors throughout your application.
- * @param {Class<Pagination<NodesType>>['connection']>}
+ * <PaginatedResourceSection> encapsulates the previous and next pagination behaviors.
  */
 export function PaginatedResourceSection({
   connection,
@@ -19,33 +17,37 @@ export function PaginatedResourceSection({
         );
 
         return (
-          <div>
-            <PreviousLink>
+          <div className="pagination-wrapper">
+            <PreviousLink className="pagination-link pagination-link--prev">
               {isLoading ? (
-                'Loading...'
+                <span className="pagination-loading">Loading...</span>
               ) : (
-                <span>
-                  <span aria-hidden="true">↑</span> Load previous
+                <span className="pagination-text">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="18 15 12 9 6 15" />
+                  </svg>
+                  Load previous
                 </span>
               )}
             </PreviousLink>
-            {resourcesClassName ? (
-              <div
-                aria-label={ariaLabel}
-                className={resourcesClassName}
-                role={ariaLabel ? 'region' : undefined}
-              >
-                {resourcesMarkup}
-              </div>
-            ) : (
-              resourcesMarkup
-            )}
-            <NextLink>
+
+            <div
+              aria-label={ariaLabel}
+              className={resourcesClassName || 'products-grid'}
+              role={ariaLabel ? 'region' : undefined}
+            >
+              {resourcesMarkup}
+            </div>
+
+            <NextLink className="pagination-link pagination-link--next">
               {isLoading ? (
-                'Loading...'
+                <span className="pagination-loading">Loading...</span>
               ) : (
-                <span>
-                  Load more <span aria-hidden="true">↓</span>
+                <span className="pagination-text">
+                  Load more
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
                 </span>
               )}
             </NextLink>

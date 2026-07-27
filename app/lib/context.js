@@ -36,6 +36,8 @@ export async function createHydrogenRouterContext(
     AppSession.init(request, [env.SESSION_SECRET]),
   ]);
 
+  const selectedCountry = getSelectedCountry(session);
+
   const hydrogenContext = createHydrogenContext(
     {
       env,
@@ -44,7 +46,7 @@ export async function createHydrogenRouterContext(
       waitUntil,
       session,
       // Or detect from URL path based on locale subpath, cookies, or any other strategy
-      i18n: {language: 'EN', country: 'US'},
+      i18n: {language: 'EN', country: selectedCountry},
       cart: {
         queryFragment: CART_QUERY_FRAGMENT,
       },
@@ -53,6 +55,16 @@ export async function createHydrogenRouterContext(
   );
 
   return hydrogenContext;
+}
+
+function getSelectedCountry(session) {
+  const country = session.get('selectedCountry');
+
+  if (typeof country === 'string' && /^[A-Z]{2}$/.test(country)) {
+    return country;
+  }
+
+  return 'US';
 }
 
 /** @typedef {Class<additionalContext>} AdditionalContextType */

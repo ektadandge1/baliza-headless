@@ -7,122 +7,151 @@ import {redirectIfHandleIsLocalized} from '~/lib/redirect';
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [{title: `Hydrogen | ${data?.blog.title ?? ''} blog`}];
+  return [{title: `${data?.blog.title ?? ''} | Baliza Journal`}];
 };
 
 /**
  * @param {Route.LoaderArgs} args
  */
-export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
-}
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {Route.LoaderArgs}
- */
-async function loadCriticalData({context, request, params}) {
+export async function loader({context, request, params}) {
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 4,
+    pageBy: 6,
   });
 
   if (!params.blogHandle) {
-    throw new Response(`blog not found`, {status: 404});
+    throw new Response('Blog not found', {status: 404});
   }
 
-  const [{blog}] = await Promise.all([
-    context.storefront.query(BLOGS_QUERY, {
-      variables: {
-        blogHandle: params.blogHandle,
-        ...paginationVariables,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  let {blog} = await context.storefront.query(BLOGS_QUERY, {
+    variables: {
+      blogHandle: params.blogHandle,
+      ...paginationVariables,
+    },
+  });
 
-  if (!blog?.articles) {
-    throw new Response('Not found', {status: 404});
+  if (!blog?.articles && params.blogHandle === 'journal') {
+    blog = FALLBACK_JOURNAL;
   }
 
-  redirectIfHandleIsLocalized(request, {handle: params.blogHandle, data: blog});
+  if (!blog?.articles) throw new Response('Not found', {status: 404});
+
+  if (blog.id) {
+    redirectIfHandleIsLocalized(request, {
+      handle: params.blogHandle,
+      data: blog,
+    });
+  }
 
   return {blog};
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
-function loadDeferredData({context}) {
-  return {};
-}
-
 export default function Blog() {
-  /** @type {LoaderReturnData} */
   const {blog} = useLoaderData();
   const {articles} = blog;
 
   return (
-    <div className="blog">
-      <h1>{blog.title}</h1>
-      <div className="blog-grid">
-        <PaginatedResourceSection connection={articles}>
-          {({node: article, index}) => (
-            <ArticleItem
-              article={article}
-              key={article.id}
-              loading={index < 2 ? 'eager' : 'lazy'}
-            />
-          )}
-        </PaginatedResourceSection>
-      </div>
-    </div>
+    <section className="blog-articles-page">
+      <nav className="blog-articles-page__crumb" aria-label="Breadcrumb">
+        <Link to="/">Home</Link>
+        <span aria-hidden="true">/</span>
+        <Link to="/blogs">Journal</Link>
+        <span aria-hidden="true">/</span>
+        <span>{blog.title}</span>
+      </nav>
+
+      <header className="blog-articles-hero">
+        <h1>{blog.title}</h1>
+        <p className="blog-articles-hero__sub">
+          Explore our latest thoughts on style, quality, and the details that
+          make Baliza different.
+        </p>
+      </header>
+
+      {articles.nodes.length ? (
+        <div className="blog-articles-grid">
+          <PaginatedResourceSection connection={articles}>
+            {({node: article, index}) => (
+              <ArticleCard
+                article={article}
+                blogHandle={blog.handle}
+                loading={index < 3 ? 'eager' : 'lazy'}
+              />
+            )}
+          </PaginatedResourceSection>
+        </div>
+      ) : (
+        <div className="blog-empty-state">
+          <h2>Journal coming soon</h2>
+          <p>Style guides, care tips, and brand stories will appear here once the Shopify blog is published.</p>
+          <Link to="/collections/all">Shop the collection</Link>
+        </div>
+      )}
+    </section>
   );
 }
 
-/**
- * @param {{
- *   article: ArticleItemFragment;
- *   loading?: HTMLImageElement['loading'];
- * }}
- */
-function ArticleItem({article, loading}) {
+function ArticleCard({article, blogHandle, loading}) {
   const publishedAt = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   }).format(new Date(article.publishedAt));
+
+  const excerpt = stripHtml(article.contentHtml).slice(0, 160) + '...';
+  const readTime = Math.max(
+    1,
+    Math.ceil(stripHtml(article.contentHtml).split(/\s+/).length / 200),
+  );
+
   return (
-    <div className="blog-article" key={article.id}>
-      <Link to={`/blogs/${article.blog.handle}/${article.handle}`}>
-        {article.image && (
-          <div className="blog-article-image">
-            <Image
-              alt={article.image.altText || article.title}
-              aspectRatio="3/2"
-              data={article.image}
-              loading={loading}
-              sizes="(min-width: 768px) 50vw, 100vw"
-            />
-          </div>
-        )}
-        <h3>{article.title}</h3>
-        <small>{publishedAt}</small>
-      </Link>
-    </div>
+    <Link
+      className="article-card"
+      to={`/blogs/${blogHandle}/${article.handle}`}
+      prefetch="intent"
+    >
+      {article.image && (
+        <div className="article-card__image">
+          <Image
+            alt={article.image.altText || article.title}
+            aspectRatio="3/2"
+            data={article.image}
+            loading={loading}
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+          />
+        </div>
+      )}
+      <div className="article-card__body">
+        <div className="article-card__meta">
+          <time dateTime={article.publishedAt}>{publishedAt}</time>
+          <span aria-hidden="true">&middot;</span>
+          <span>{readTime} min read</span>
+        </div>
+        <h2 className="article-card__title">{article.title}</h2>
+        <p className="article-card__excerpt">{excerpt}</p>
+        <span className="article-card__link">
+          Read article
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </span>
+      </div>
+    </Link>
   );
 }
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/blog
+function stripHtml(html) {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+}
+
 const BLOGS_QUERY = `#graphql
   query Blog(
     $language: LanguageCode
@@ -151,11 +180,9 @@ const BLOGS_QUERY = `#graphql
         pageInfo {
           hasPreviousPage
           hasNextPage
-          hasNextPage
           endCursor
           startCursor
         }
-
       }
     }
   }
@@ -180,6 +207,20 @@ const BLOGS_QUERY = `#graphql
     }
   }
 `;
+
+const FALLBACK_JOURNAL = {
+  title: 'Journal',
+  handle: 'journal',
+  articles: {
+    nodes: [],
+    pageInfo: {
+      hasPreviousPage: false,
+      hasNextPage: false,
+      endCursor: null,
+      startCursor: null,
+    },
+  },
+};
 
 /** @typedef {import('./+types/blogs.$blogHandle._index').Route} Route */
 /** @typedef {import('storefrontapi.generated').ArticleItemFragment} ArticleItemFragment */

@@ -1,12 +1,13 @@
 import {Suspense, useState} from 'react';
-import {Await, NavLink, useAsyncValue} from 'react-router';
+import {Await, NavLink, useAsyncValue, useLocation} from 'react-router';
 import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
+import {useWishlist} from '~/components/WishlistProvider';
 
 /**
  * @param {HeaderProps}
  */
-export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
+export function Header({header, cart, isLoggedIn, localization, publicStoreDomain}) {
   const {shop} = header;
 
   return (
@@ -30,7 +31,11 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
             </NavLink>
           </div>
 
-          <HeaderActions isLoggedIn={isLoggedIn} cart={cart} />
+          <HeaderActions
+            cart={cart}
+            isLoggedIn={isLoggedIn}
+            localization={localization}
+          />
         </header>
 
         <nav className="header-category-rail" aria-label="Featured categories">
@@ -48,10 +53,28 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
 function AnnouncementBar() {
   return (
     <div className="announcement-bar" aria-label="Store announcement">
-      <p>
-        Free shipping over $150 <span aria-hidden="true">/</span> Premium cotton essentials <span aria-hidden="true">/</span>{' '}
-        <a href="/collections/all">Shop the collection</a>
-      </p>
+      <div className="announcement-track">
+        <div className="announcement-content">
+          <span>Free shipping over $150</span>
+          <span className="announcement-sep" aria-hidden="true">&#9670;</span>
+          <span>Premium cotton essentials</span>
+          <span className="announcement-sep" aria-hidden="true">&#9670;</span>
+          <a href="/collections/all">Shop the collection</a>
+          <span className="announcement-sep" aria-hidden="true">&#9670;</span>
+          <span>New arrivals weekly</span>
+          <span className="announcement-sep" aria-hidden="true">&#9670;</span>
+        </div>
+        <div className="announcement-content" aria-hidden="true">
+          <span>Free shipping over $150</span>
+          <span className="announcement-sep">&#9670;</span>
+          <span>Premium cotton essentials</span>
+          <span className="announcement-sep">&#9670;</span>
+          <a href="/collections/all">Shop the collection</a>
+          <span className="announcement-sep">&#9670;</span>
+          <span>New arrivals weekly</span>
+          <span className="announcement-sep">&#9670;</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -61,14 +84,17 @@ function AnnouncementBar() {
  *   primaryDomainUrl: HeaderProps['header']['shop']['primaryDomain']['url'];
  *   viewport: Viewport;
  *   publicStoreDomain: HeaderProps['publicStoreDomain'];
+ *   isLoggedIn?: boolean;
  * }}
  */
-export function HeaderMenu({primaryDomainUrl, viewport, publicStoreDomain}) {
+export function HeaderMenu({primaryDomainUrl, viewport, publicStoreDomain, isLoggedIn, localization}) {
   if (viewport === 'mobile') {
     return (
       <MobileNav
         primaryDomainUrl={primaryDomainUrl}
         publicStoreDomain={publicStoreDomain}
+        isLoggedIn={isLoggedIn}
+        localization={localization}
       />
     );
   }
@@ -128,7 +154,7 @@ function MegaMenu({item}) {
   );
 }
 
-function MobileNav() {
+function MobileNav({isLoggedIn, localization}) {
   const {close} = useAside();
   const [openSubmenu, setOpenSubmenu] = useState(null);
 
@@ -193,9 +219,10 @@ function MobileNav() {
       </div>
 
       <div className="mobile-nav-footer">
-        <NavLink to="/account" onClick={close} className="mobile-nav-footer-link">
+        <CountrySelector localization={localization} placement="mobile" />
+        <NavLink to={isLoggedIn ? "/account" : "/account/login"} onClick={close} className="mobile-nav-footer-link">
           <AccountIcon />
-          <span>My Account</span>
+          <span>{isLoggedIn ? 'My Account' : 'Sign In'}</span>
         </NavLink>
       </div>
     </nav>
@@ -205,20 +232,92 @@ function MobileNav() {
 /**
  * @param {Pick<HeaderProps, 'isLoggedIn' | 'cart'>}
  */
-function HeaderActions({isLoggedIn, cart}) {
+function HeaderActions({cart, isLoggedIn, localization}) {
+  return (
+    <Suspense fallback={<HeaderActionsContent cart={cart} isLoggedIn={false} />}>
+      <Await resolve={isLoggedIn}>
+        {(loggedIn) => (
+          <HeaderActionsContent
+            cart={cart}
+            isLoggedIn={loggedIn}
+            localization={localization}
+          />
+        )}
+      </Await>
+    </Suspense>
+  );
+}
+
+function HeaderActionsContent({cart, isLoggedIn, localization}) {
   return (
     <nav className="header-actions" aria-label="Header actions">
-      <NavLink prefetch="intent" to="/account" className="header-action-link header-action-link--account">
-        <AccountIcon />
-        <Suspense fallback={<span>Sign in</span>}>
-          <Await resolve={isLoggedIn} errorElement={<span>Sign in</span>}>
-            {(isLoggedIn) => <span>{isLoggedIn ? 'Account' : 'Sign in'}</span>}
-          </Await>
-        </Suspense>
-      </NavLink>
+      <DesktopSearchForm />
+      <CountrySelector localization={localization} placement="header" />
+      {isLoggedIn ? (
+        <NavLink prefetch="intent" to="/account" className="header-action-link header-action-link--account" aria-label="Account">
+          <AccountIcon />
+        </NavLink>
+      ) : (
+        <NavLink prefetch="intent" to="/account/login" className="header-action-link header-action-link--account" aria-label="Sign in">
+          <AccountIcon />
+        </NavLink>
+      )}
+      <WishlistToggle />
       <SearchToggle />
       <CartToggle cart={cart} />
     </nav>
+  );
+}
+
+export function CountrySelector({localization, placement = 'header'}) {
+  const location = useLocation();
+  const countries = localization?.availableCountries ?? [];
+  const activeCountry = localization?.country?.isoCode ?? 'US';
+
+  if (!countries.length) return null;
+
+  return (
+    <form className={`country-selector country-selector--${placement}`} action="/localization" method="post">
+      <label className="sr-only" htmlFor={`country-selector-${placement}`}>
+        Country/region
+      </label>
+      <span className="country-selector-icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3.6 9h16.8M3.6 15h16.8M12 3c2.2 2.5 3.3 5.5 3.3 9S14.2 18.5 12 21c-2.2-2.5-3.3-5.5-3.3-9S9.8 5.5 12 3Z" />
+        </svg>
+      </span>
+      <input type="hidden" name="redirectTo" value={`${location.pathname}${location.search}`} />
+      <select
+        id={`country-selector-${placement}`}
+        name="country"
+        defaultValue={activeCountry}
+        onChange={(event) => event.currentTarget.form?.requestSubmit()}
+        aria-label="Country/region"
+      >
+        {countries.map((country) => (
+          <option key={country.isoCode} value={country.isoCode}>
+            {country.name} ({country.currency?.isoCode})
+          </option>
+        ))}
+      </select>
+    </form>
+  );
+}
+
+function DesktopSearchForm() {
+  return (
+    <form className="header-search-form" action="/search" method="get" role="search">
+      <label className="sr-only" htmlFor="header-search">
+        Search products
+      </label>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M16.5 16.5L21 21" strokeLinecap="round" />
+      </svg>
+      <input id="header-search" name="q" type="search" placeholder="Search T-shirts" autoComplete="off" />
+      <button type="submit">Search</button>
+    </form>
   );
 }
 
@@ -238,7 +337,7 @@ function MobileMenuToggle() {
 function SearchToggle() {
   const {open} = useAside();
   return (
-    <button className="header-action-btn" onClick={() => open('search')} aria-label="Search">
+    <button className="header-action-btn header-action-btn--search" onClick={() => open('search')} aria-label="Search">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" aria-hidden="true">
         <circle cx="11" cy="11" r="7" />
         <path d="M16.5 16.5L21 21" strokeLinecap="round" />
@@ -283,6 +382,36 @@ function CartBadge({count}) {
         <path d="M9 7.5V6a3 3 0 0 1 6 0v1.5" strokeLinecap="round" />
       </svg>
       <span className="cart-count">{count}</span>
+    </button>
+  );
+}
+
+function WishlistToggle() {
+  const {count, hydrated} = useWishlist();
+  const {open} = useAside();
+
+  return (
+    <button
+      type="button"
+      className="header-action-btn header-action-btn--wishlist"
+      onClick={() => open('wishlist')}
+      aria-label={`Wishlist (${hydrated ? count : 0} ${
+        count === 1 ? 'item' : 'items'
+      })`}
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path
+          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.35"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {hydrated && count > 0 ? (
+        <span className="wishlist-count">{count}</span>
+      ) : null}
     </button>
   );
 }
@@ -371,7 +500,7 @@ const FEATURED_LINKS = [
   {id: 'graphics', title: 'Graphics', url: '/collections/graphic-tees'},
   {id: 'polos', title: 'Polos', url: '/collections/polo-shirts'},
   {id: 'essentials', title: 'Essentials', url: '/collections/essentials'},
-  {id: 'sale', title: 'Sale', url: '/collections/sale'},
+  {id: 'sale', title: 'Offers', url: '/offers'},
 ];
 
 /** @typedef {'desktop' | 'mobile'} Viewport */
@@ -380,9 +509,11 @@ const FEATURED_LINKS = [
  * @property {HeaderQuery} header
  * @property {Promise<CartApiQueryFragment|null>} cart
  * @property {Promise<boolean>} isLoggedIn
+ * @property {RootLocalization} localization
  * @property {string} publicStoreDomain
  */
 
 /** @typedef {import('@shopify/hydrogen').CartViewPayload} CartViewPayload */
 /** @typedef {import('storefrontapi.generated').HeaderQuery} HeaderQuery */
 /** @typedef {import('storefrontapi.generated').CartApiQueryFragment} CartApiQueryFragment */
+/** @typedef {import('storefrontapi.generated').LocalizationQuery['localization']} RootLocalization */

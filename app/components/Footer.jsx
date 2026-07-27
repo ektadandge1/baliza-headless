@@ -1,9 +1,10 @@
 import {NavLink} from 'react-router';
+import {CountrySelector} from '~/components/Header';
 
 /**
  * @param {FooterProps}
  */
-export function Footer({header}) {
+export function Footer({header, localization}) {
   return (
     <div className="footer-wrapper">
       <div className="footer-top">
@@ -101,6 +102,7 @@ export function Footer({header}) {
               <text x="19" y="15" textAnchor="middle" fill="#111" fontSize="7" fontFamily="sans-serif" fontWeight="600">GPay</text>
             </svg>
           </div>
+          <CountrySelector localization={localization} placement="footer" />
         </div>
       </div>
     </div>
@@ -127,8 +129,10 @@ function FooterNewsletterForm() {
  * @typedef {Object} FooterProps
  * @property {Promise<FooterQuery|null>} footer
  * @property {HeaderQuery} header
+ * @property {RootLocalization} localization
  * @property {string} publicStoreDomain
  */
 
 /** @typedef {import('storefrontapi.generated').FooterQuery} FooterQuery */
 /** @typedef {import('storefrontapi.generated').HeaderQuery} HeaderQuery */
+/** @typedef {import('storefrontapi.generated').LocalizationQuery['localization']} RootLocalization */

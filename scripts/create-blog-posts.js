@@ -1,0 +1,343 @@
+/**
+ * Creates 5 blog posts in Shopify via the Admin API.
+ *
+ * Usage:
+ *   1. Set SHOPIFY_ADMIN_TOKEN and SHOPIFY_SHOP_DOMAIN in your .env or environment
+ *   2. Run: node scripts/create-blog-posts.js
+ *
+ * Required Admin API scopes: write_content, read_content
+ */
+
+const SHOP_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN || '';
+const ADMIN_TOKEN = process.env.SHOPIFY_ADMIN_TOKEN || '';
+
+const ENDPOINT = `https://${SHOP_DOMAIN}/admin/api/2024-10/graphql.json`;
+
+const headers = {
+  'Content-Type': 'application/json',
+  'X-Shopify-Access-Token': ADMIN_TOKEN,
+};
+
+async function gql(query, variables = {}) {
+  const res = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({query, variables}),
+  });
+  const json = await res.json();
+  if (json.errors) {
+    console.error('GraphQL errors:', JSON.stringify(json.errors, null, 2));
+    throw new Error('GraphQL request failed');
+  }
+  return json.data;
+}
+
+// ── Step 1: Find or create the "Journal" blog ──────────────────────
+
+const FIND_BLOG = `#graphql
+  query FindBlog($title: String!) {
+    blogs(first: 10, query: $title) {
+      nodes {
+        id
+        title
+        handle
+      }
+    }
+  }
+`;
+
+const CREATE_BLOG = `#graphql
+  mutation CreateBlog($input: BlogInput!) {
+    blogCreate(input: $input) {
+      blog {
+        id
+        title
+        handle
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+async function getOrCreateBlog() {
+  const title = 'Journal';
+  const data = await gql(FIND_BLOG, {title});
+  const existing = data.blogs.nodes.find(
+    (b) => b.title.toLowerCase() === title.toLowerCase(),
+  );
+  if (existing) {
+    console.log(`Blog "${existing.title}" already exists (${existing.id})`);
+    return existing.id;
+  }
+
+  console.log('Creating blog "Journal"...');
+  const res = await gql(CREATE_BLOG, {
+    input: {
+      title,
+      commentPolicy: 'MODERATED',
+    },
+  });
+
+  if (res.blogCreate.userErrors.length) {
+    throw new Error(JSON.stringify(res.blogCreate.userErrors));
+  }
+
+  const blog = res.blogCreate.blog;
+  console.log(`Blog created: ${blog.title} (${blog.id})`);
+  return blog.id;
+}
+
+// ── Step 2: Create articles ────────────────────────────────────────
+
+const CREATE_ARTICLE = `#graphql
+  mutation CreateArticle($article: ArticleInput!) {
+    articleCreate(article: $article) {
+      article {
+        id
+        title
+        handle
+        publishedAt
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const articles = [
+  {
+    title: 'Why Premium Cotton Matters: The Baliza Difference',
+    tags: ['premium cotton', 'quality', 'brand story', 'fabric'],
+    contentHtml: `<h2>The Fabric That Makes Everything Better</h2>
+<p>Not all cotton is created equal. Walk into any fast-fashion store and you'll find racks of t-shirts that feel thin, scratchy, or destined for the donation bin after three washes. At Baliza, we started with one question: <strong>what if every garment felt like your favourite one from day one?</strong></p>
+<p>The answer was premium cotton — and it changed everything about how we design, produce, and deliver our collections.</p>
+<h2>What Makes Premium Cotton Different</h2>
+<p>Premium cotton, often referred to as long-staple or extra-long-staple (ELS) cotton, has fibres that are significantly longer than standard cotton. This single characteristic transforms the entire wearing experience:</p>
+<ul>
+  <li><strong>Softness that lasts</strong> — Longer fibres create a smoother yarn surface, meaning less pilling and a buttery hand-feel that actually improves with washing.</li>
+  <li><strong>Breathability</strong> — Premium cotton breathes better than synthetic blends, keeping you cool in summer and comfortable in transitional weather.</li>
+  <li><strong>Durability</strong> — The same long fibres that make it soft also make it stronger. Our tees survive 50+ washes without losing shape.</li>
+  <li><strong>Colour retention</strong> — Dyes penetrate deeper into premium fibres, so blacks stay black and whites stay crisp.</li>
+</ul>
+<h2>Why We Chose It</h2>
+<p>When we launched Baliza, we tested 47 different cotton samples. We washed them 100 times. We wore them in 35°C heat and freezing offices. We slept in them, exercised in them, and travelled with them.</p>
+<p>The difference was undeniable. Premium cotton didn't just feel better — it <em>performed</em> better. It held its shape. It didn't stretch at the collar. It didn't develop those tiny pills that make a tee look worn out after a month.</p>
+<blockquote>The cheapest garment is the one you actually wear. Premium cotton isn't an expense — it's an investment in your daily comfort.</blockquote>
+<h2>The Numbers Behind the Quality</h2>
+<p>Here's what our premium cotton delivers compared to standard cotton:</p>
+<ul>
+  <li>40% longer fibre length</li>
+  <li>2.5x more wash cycles before visible wear</li>
+  <li>60% less pilling after 20 washes</li>
+  <li>35% better moisture absorption</li>
+</ul>
+<p>These aren't marketing numbers. They're the results of independent testing that we publish because we believe you deserve to know what you're wearing.</p>
+<h2>What This Means for You</h2>
+<p>When you put on a Baliza tee, you're not just wearing a shirt. You're wearing the result of obsessive material selection, precision construction, and a refusal to compromise on the things that matter.</p>
+<p>Premium cotton is the foundation of everything we make. It's why our tees feel like they were made for you — because in a way, they were.</p>`,
+  },
+  {
+    title: '5 Ways to Style a Classic White Tee',
+    tags: ['styling', 'white tee', 'fashion tips', 'essentials'],
+    contentHtml: `<h2>The Most Versatile Piece in Your Wardrobe</h2>
+<p>The white t-shirt is the most underrated item in men's fashion. It's the piece that James Dean made iconic, that Steve Jobs turned into a uniform, and that every well-dressed man owns in multiples.</p>
+<p>But here's the thing — not every white tee is created equal, and how you style it makes all the difference. Here are five ways to wear the same Baliza white tee and look completely different each time.</p>
+<h2>1. The Minimal Foundation</h2>
+<p>The simplest way to wear a white tee is as a standalone piece. Pair it with well-fitted dark jeans or chinos and clean white sneakers. The key is fit — your tee should skim your torso without being tight, and the hem should hit just below your belt line.</p>
+<p><strong>The Baliza move:</strong> Choose our Premium Cotton Crew in White. The fabric weight is substantial enough to look polished without an undershirt, and the collar stays crisp all day.</p>
+<h2>2. The Layered Professional</h2>
+<p>A white tee under a blazer is the modern alternative to a dress shirt. It's less formal but infinitely more interesting. Pair with tailored trousers and loafers for a smart-casual look that works at dinner, meetings, or date night.</p>
+<p><strong>Pro tip:</strong> Make sure the blazer shoulders align with your natural shoulders. A structured blazer over a relaxed tee creates the perfect balance.</p>
+<h2>3. The Weekend Relaxed</h2>
+<p>Layer your white tee under an open flannel shirt or lightweight jacket. Add chinos and desert boots. This is the look for Saturday farmers' markets, coffee runs, and lazy Sunday afternoons.</p>
+<p><strong>The Baliza move:</strong> Roll the jacket sleeves once to show the tee underneath. It's a small detail that adds intentional style.</p>
+<h2>4. The Monochrome Statement</h2>
+<p>White on white on white. Pair a white tee with white jeans and a white sneaker. Sounds simple? It is — but it requires the right shades and textures to avoid looking like a uniform.</p>
+<p><strong>Pro tip:</strong> Mix textures. A matte cotton tee with white denim and canvas sneakers creates visual interest without colour.</p>
+<h2>5. The Evening Elevated</h2>
+<p>A white tee with black tailored trousers and black leather boots is effortlessly sophisticated. Add a minimal watch and you're ready for any evening event that doesn't require a suit.</p>
+<p><strong>The Baliza move:</strong> Tuck the tee in for a cleaner silhouette. The half-tuck works too — it defines your waist without looking too formal.</p>
+<h2>The Common Thread</h2>
+<p>All five looks share one thing: <strong>a well-made white tee</strong>. The fit, fabric, and construction are what make these combinations work. A cheap white tee would fall apart under a blazer. A premium one elevates everything around it.</p>
+<p>Start with quality. The rest follows naturally.</p>`,
+  },
+  {
+    title: 'How to Care for Your Clothes: A Complete Guide',
+    tags: ['care guide', 'laundry', 'clothing care', 'sustainability'],
+    contentHtml: `<h2>Make Your Clothes Last Years, Not Months</h2>
+<p>You invest in quality. You choose premium fabrics and thoughtful construction. But are you taking care of your clothes properly? Most people aren't — and it's costing them.</p>
+<p>Here's the complete guide to making your Baliza pieces last as long as they were designed to.</p>
+<h2>Washing: The Basics That Matter</h2>
+<h3>Temperature</h3>
+<p><strong>Cold water is your friend.</strong> Hot water breaks down fibres, fades colours, and causes shrinkage. Wash everything in cold water (30°C or below) unless the care label explicitly says otherwise.</p>
+<h3>Inside Out</h3>
+<p>Turn garments inside out before washing. This protects the outer surface from friction against other clothes, which is the primary cause of pilling and fading.</p>
+<h3>Full Loads vs. Small Loads</h3>
+<p>Wash full loads to reduce friction — clothes have less room to rub against each other. But don't overstuff. Leave about 20% of the drum empty for proper agitation and rinsing.</p>
+<h3>Detergent</h3>
+<p>Use a mild, liquid detergent. Powder detergents can leave residue on fabrics. Avoid optical brighteners — they coat fibres with a chemical layer that reduces breathability.</p>
+<h2>Drying: Where Most People Go Wrong</h2>
+<p>The dryer is the most damaging appliance in your home when it comes to clothing. Heat breaks down elastic fibres, shrinks cotton, and weakens seams.</p>
+<h3>Air Dry When Possible</h3>
+<p>Hang or lay flat to dry. It takes longer, but your clothes will thank you. Use a padded hanger for knits to prevent shoulder bumps. Lay tees flat on a clean towel to maintain their shape.</p>
+<h3>If You Must Use a Dryer</h3>
+<p>Use the lowest heat setting. Remove clothes while slightly damp and hang to finish. This reduces heat exposure while still being practical.</p>
+<h2>Storage: Out of Sight, Out of Mind</h2>
+<h3>Fold, Don't Hang</h3>
+<p>T-shirts, sweaters, and knitwear should always be folded. Hanging stretches the shoulders and neckline over time.</p>
+<h3>Hangers Matter</h3>
+<p>For shirts and jackets, use shaped wooden or velvet hangers. Wire hangers distort shoulder shapes. Padded hangers are best for delicate items.</p>
+<h2>Special Care for Specific Items</h2>
+<h3>Premium Cotton Tees</h3>
+<ul>
+  <li>Wash cold, inside out</li>
+  <li>Air dry or tumble on low</li>
+  <li>Never iron directly — use a cloth barrier or steam</li>
+  <li>Store folded, never hung</li>
+</ul>
+<h3>Dark Colours</h3>
+<ul>
+  <li>Wash with like colours for the first 5 washes</li>
+  <li>Add a tablespoon of white vinegar to the first wash to set the dye</li>
+  <li>Store away from direct sunlight</li>
+</ul>
+<h2>The Baliza Promise</h2>
+<p>Our garments are designed to last. But even the best-made clothes need proper care. Follow these guidelines and your Baliza pieces will look as good in year three as they did on day one.</p>`,
+  },
+  {
+    title: 'Summer 2025 Trend Report: What\'s In',
+    tags: ['summer 2025', 'trends', 'fashion trends', 'seasonal'],
+    contentHtml: `<h2>The Season Ahead</h2>
+<p>Summer 2025 is about restraint. After years of loud prints and oversized everything, the pendulum is swinging back toward clean lines, muted palettes, and pieces that speak through quality rather than volume.</p>
+<p>Here's what's defining men's fashion this season — and how to wear it.</p>
+<h2>1. The Return of Fitted</h2>
+<p>Oversized isn't dead, but it's sharing space with a more tailored silhouette. Slim-straight pants are back. Tees that follow the torso without clinging. Blazers with natural shoulders. The overall vibe is <strong>intentional</strong> — clothes that look like you chose them, not inherited them.</p>
+<p><strong>How to wear it:</strong> Start with a well-fitted tee. Our Premium Cotton Crew is designed with exactly this in mind — relaxed enough for comfort, structured enough to look polished.</p>
+<h2>2. Earth Tones Dominate</h2>
+<p>Think sand, olive, terracotta, stone, and deep brown. These colours work across skin tones, pair with everything, and age beautifully. They're the foundation of a wardrobe that doesn't need constant refreshing.</p>
+<p><strong>The palette:</strong> Sand, olive, charcoal, off-white, and deep navy. Build your summer wardrobe around these five colours and you'll never struggle with what to wear.</p>
+<h2>3. Texture Over Pattern</h2>
+<p>Instead of bold prints, this season's interest comes from fabric texture. Linen blends, slub cotton, terry cloth, and waffle knits add visual depth without visual noise. A textured white tee does more than a printed one.</p>
+<p><strong>How to wear it:</strong> Mix textures in a single outfit. A slub cotton tee with linen trousers and suede loafers creates a rich, layered look without any pattern.</p>
+<h2>4. The Short-Sleeve Shirt Renaissance</h2>
+<p>The camp-collar shirt has evolved. This season's versions are cleaner — less Hawaiian, more architectural. Think boxy fits, muted colours, and quality fabrics.</p>
+<p><strong>How to wear it:</strong> Pair with tailored shorts and leather sandals for a Mediterranean-inspired look, or with chinos and loafers for evening.</p>
+<h2>5. Minimal Accessories</h2>
+<p>One watch. One bracelet. Maybe a pair of sunglasses. The accessory game is about <strong>one good thing</strong> rather than five mediocre ones.</p>
+<h2>What's Out</h2>
+<ul>
+  <li>Graphic tees with large logos (subtle branding only)</li>
+  <li>Chunky "dad" sneakers (slim profiles are back)</li>
+  <li>Neon colours (muted tones dominate)</li>
+  <li>Excess accessories (less is more)</li>
+</ul>
+<h2>The Baliza Edit</h2>
+<p>Our Summer 2025 collection is built around these principles. Premium cotton in earth tones. Clean silhouettes. Texture that rewards attention. Every piece designed to work together and last beyond a single season.</p>`,
+  },
+  {
+    title: 'Behind the Brand: How Baliza Started',
+    tags: ['brand story', 'founder', 'behind the scenes', 'mission'],
+    contentHtml: `<h2>It Started with a Frustrated Customer</h2>
+<p>Every brand starts with a problem. Ours was simple: <strong>we couldn't find a t-shirt that lasted.</strong></p>
+<p>Not a t-shirt that looked good in photos. Not a t-shirt with a clever logo. A t-shirt that survived more than a few washes without losing its shape, developing pills, or fading into a sad shadow of its original colour.</p>
+<p>So we decided to make one.</p>
+<h2>The Research Phase</h2>
+<p>We spent six months doing what most brands skip: understanding fabric. We visited mills in Portugal, Turkey, and India. We tested 47 different cotton samples. We washed them, stretched them, wore them in extreme heat and cold, and documented everything.</p>
+<p>What we learned changed how we think about clothing:</p>
+<ul>
+  <li><strong>Fibre length matters more than fibre origin.</strong> Long-staple cotton outperforms standard cotton regardless of where it's grown.</li>
+  <li><strong>Construction beats composition.</strong> A well-made cotton tee outlasts a poorly made "luxury" blend.</li>
+  <li><strong>The details are everything.</strong> Collar construction, seam placement, and stitch density determine whether a garment lasts months or years.</li>
+</ul>
+<h2>The First Collection</h2>
+<p>Our first collection was intentionally small. Four t-shirts. Four colours. That's it.</p>
+<p>We chose this restraint because we wanted to perfect one thing before moving to the next. Each tee went through 12 iterations before we were satisfied. The collar was reinforced. The hem was double-stitched. The fabric was pre-washed to prevent shrinkage.</p>
+<p>When we finally launched, we sold out in three weeks. Not because of marketing — because people could feel the difference.</p>
+<h2>The Name</h2>
+<p>Baliza means "beacon" or "lighthouse" in Portuguese. We chose it because we wanted to be a reference point — a brand that people trust to make the right decisions about quality, materials, and construction.</p>
+<p>In a market full of noise, we wanted to be the clear signal.</p>
+<h2>What We Believe</h2>
+<p>Our philosophy is built on three principles:</p>
+<h3>1. Quality Over Quantity</h3>
+<p>We'd rather make one excellent product than ten average ones. Every garment we produce passes through quality checks that would seem excessive to most brands. We do this because we know our customers can tell the difference.</p>
+<h3>2. Transparency Over Marketing</h3>
+<p>We publish our fabric sources, our construction methods, and our quality test results. We don't hide behind vague claims like "premium quality" — we show you exactly what premium means.</p>
+<h3>3. Longevity Over Trends</h3>
+<p>We don't chase every trend. We make timeless pieces that work across seasons and years. A Baliza tee should look as good in 2028 as it does in 2025.</p>
+<h2>Where We're Going</h2>
+<p>Today, Baliza is more than t-shirts. We've expanded into polos, hoodies, and essentials — each category receiving the same obsessive attention to fabric and construction that defined our first collection.</p>
+<p>But our mission hasn't changed: <strong>make clothes that last, and make them honestly.</strong></p>
+<p>Thank you for being part of this journey. Every garment you wear from us is a vote for quality over convenience, substance over hype, and clothing that respects both the wearer and the maker.</p>`,
+  },
+];
+
+async function createArticles(blogId) {
+  for (const article of articles) {
+    console.log(`Creating: "${article.title}"...`);
+
+    const res = await gql(CREATE_ARTICLE, {
+      article: {
+        blogId,
+        title: article.title,
+        contentHtml: article.contentHtml,
+        tags: article.tags,
+        publishedAt: new Date().toISOString(),
+        author: {name: 'Baliza Team'},
+      },
+    });
+
+    if (res.articleCreate.userErrors.length) {
+      console.error(
+        `  Error:`,
+        JSON.stringify(res.articleCreate.userErrors),
+      );
+    } else {
+      const a = res.articleCreate.article;
+      console.log(`  Created: ${a.title} (handle: ${a.handle})`);
+    }
+  }
+}
+
+// ── Main ───────────────────────────────────────────────────────────
+
+async function main() {
+  if (!SHOP_DOMAIN || !ADMIN_TOKEN) {
+    console.error(`
+╔══════════════════════════════════════════════════════════════╗
+║  Missing credentials!                                       ║
+║                                                              ║
+║  Set these in your .env or environment:                      ║
+║    SHOPIFY_SHOP_DOMAIN=your-store.myshopify.com              ║
+║    SHOPIFY_ADMIN_TOKEN=shpat_xxxxxxxx                        ║
+║                                                              ║
+║  How to get an Admin API token:                              ║
+║  1. Go to Shopify Admin → Settings → Apps and sales channels ║
+║  2. Click "Develop apps" → Create an app                     ║
+║  3. Configure → Admin API access scopes:                     ║
+║     - write_content                                          ║
+║     - read_content                                           ║
+║  4. Install the app → Copy the Admin API access token        ║
+╚══════════════════════════════════════════════════════════════╝
+`);
+    process.exit(1);
+  }
+
+  console.log(`\nShop: ${SHOP_DOMAIN}`);
+  console.log(`Creating blog "Journal" with ${articles.length} articles...\n`);
+
+  const blogId = await getOrCreateBlog();
+  await createArticles(blogId);
+
+  console.log('\nDone! All articles created.');
+  console.log(`View at: https://${SHOP_DOMAIN}/admin/blogs`);
+}
+
+main().catch((err) => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});

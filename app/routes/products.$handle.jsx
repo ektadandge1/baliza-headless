@@ -10,7 +10,18 @@ import {
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
+import {ProductReviews} from '~/components/ProductReviews';
+import {Stars} from '~/components/Stars';
+import {DeliveryEstimator} from '~/components/DeliveryEstimator';
+import {JudgeMeReviewWidget} from '~/components/JudgeMe';
+import {WishlistButton} from '~/components/WishlistButton';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {
+  getAllReviews,
+  getProductReviews,
+  getExternalId,
+  judgeMeEnabled,
+} from '~/lib/judgeMe';
 
 /**
  * @type {Route.MetaFunction}
@@ -30,7 +41,7 @@ export const meta = ({data}) => {
  */
 export async function loader(args) {
   // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
+  const deferredData = await loadDeferredData(args);
 
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
@@ -76,16 +87,41 @@ async function loadCriticalData({context, params, request}) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  * @param {Route.LoaderArgs}
  */
-function loadDeferredData({context, params}) {
+async function loadDeferredData({context}) {
   // Put any API calls that is not critical to be available on first page render
   // For example: product reviews, product recommendations, social feeds.
+  const env = context.env;
 
-  return {};
+  const judgeMeWidgetEnabled = Boolean(
+    env.JUDGEME_SHOP_DOMAIN && env.JUDGEME_PUBLIC_TOKEN,
+  );
+
+  if (!judgeMeEnabled(env)) {
+    return {
+      judgeMeReviews: [],
+      judgeMeShopDomain: undefined,
+      judgeMeWidgetEnabled,
+    };
+  }
+
+  return {
+    judgeMeReviews: await getAllReviews(env),
+    judgeMeShopDomain: env.JUDGEME_SHOP_DOMAIN,
+    judgeMeWidgetEnabled,
+  };
 }
 
 export default function Product() {
   /** @type {LoaderReturnData} */
-  const {product} = useLoaderData();
+  const {product, judgeMeReviews, judgeMeShopDomain, judgeMeWidgetEnabled} =
+    useLoaderData();
+
+  const externalId = getExternalId(product.id);
+  const reviews = getProductReviews(judgeMeReviews ?? [], externalId);
+  const reviewTotal = reviews.length;
+  const reviewAverage = reviewTotal
+    ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviewTotal
+    : 0;
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -103,31 +139,120 @@ export default function Product() {
     selectedOrFirstAvailableVariant: selectedVariant,
   });
 
-  const {title, descriptionHtml} = product;
+  const {title, description, descriptionHtml, vendor} = product;
+  const productSummary = getProductSummary(description);
 
   return (
-    <div className="product">
-      <ProductImage image={selectedVariant?.image} />
-      <div className="product-main">
-        <h1>{title}</h1>
-        <ProductPrice
-          price={selectedVariant?.price}
-          compareAtPrice={selectedVariant?.compareAtPrice}
-        />
-        <br />
-        <ProductForm
-          productOptions={productOptions}
-          selectedVariant={selectedVariant}
-        />
-        <br />
-        <br />
-        <p>
-          <strong>Description</strong>
-        </p>
-        <br />
-        <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-        <br />
+    <div className="product-page">
+      <div className="product product--premium">
+        <ProductImage image={selectedVariant?.image} />
+        <section className="product-main" aria-label="Product information">
+          <div className="product-main__eyebrow">
+            <span className="product-main__badge">Product details</span>
+            {vendor ? <span className="product-vendor">{vendor}</span> : null}
+          </div>
+
+          <h1>{title}</h1>
+
+          <div className="product-main__meta">
+            {reviewTotal ? (
+              <span className="product-main__rating">
+                <Stars value={reviewAverage} size={13} />
+                <strong>{reviewAverage.toFixed(1)}</strong>
+                <a href="#product-reviews">
+                  {reviewTotal} review{reviewTotal > 1 ? 's' : ''}
+                </a>
+              </span>
+            ) : (
+              <span className="product-main__rating product-main__rating--empty">
+                No reviews yet
+              </span>
+            )}
+            {selectedVariant?.sku ? (
+              <small className="product-main__sku">SKU {selectedVariant.sku}</small>
+            ) : null}
+            {selectedVariant ? (
+              <small
+                className={`product-main__stock ${
+                  selectedVariant.availableForSale
+                    ? 'product-main__stock--available'
+                    : 'product-main__stock--soldout'
+                }`}
+              >
+                {selectedVariant.availableForSale ? 'In stock' : 'Sold out'}
+              </small>
+            ) : null}
+          </div>
+
+          {productSummary ? (
+            <p className="product-main__summary">{productSummary}</p>
+          ) : null}
+
+          <div className="product-main__price-row">
+            <ProductPrice
+              price={selectedVariant?.price}
+              compareAtPrice={selectedVariant?.compareAtPrice}
+            />
+            <WishlistButton
+              product={{
+                id: product.id,
+                handle: product.handle,
+                title: product.title,
+                featuredImage: selectedVariant?.image,
+                priceRange: {minVariantPrice: selectedVariant?.price},
+                variants: {nodes: product.adjacentVariants},
+              }}
+              variantId={selectedVariant?.id}
+            />
+          </div>
+
+          <DeliveryEstimator price={selectedVariant?.price} />
+
+          <ProductForm
+            productOptions={productOptions}
+            selectedVariant={selectedVariant}
+          />
+
+          <div className="product-assurance-grid" aria-label="Shopping benefits">
+            <span>Secure checkout</span>
+            <span>Easy exchange</span>
+            <span>Quality checked</span>
+          </div>
+
+          <details className="product-detail-drawer" open>
+            <summary>Description</summary>
+            <div
+              className="product-description-prose"
+              dangerouslySetInnerHTML={{__html: descriptionHtml}}
+            />
+          </details>
+
+          <details className="product-detail-drawer">
+            <summary>Size & Fit</summary>
+            <p>
+              Choose your usual size for a regular fit. Size availability updates
+              instantly based on the selected variant.
+            </p>
+          </details>
+        </section>
       </div>
+
+      {judgeMeWidgetEnabled ? (
+        <div id="product-reviews">
+          <JudgeMeReviewWidget id={product.id} title={product.title} />
+        </div>
+      ) : (
+        <div id="product-reviews">
+          <ProductReviews
+            reviews={reviews}
+            shopDomain={judgeMeShopDomain}
+            externalId={externalId}
+            productHandle={product.handle}
+            productTitle={product.title}
+          />
+        </div>
+      )}
+
       <Analytics.ProductView
         data={{
           products: [
@@ -145,6 +270,15 @@ export default function Product() {
       />
     </div>
   );
+}
+
+function getProductSummary(description) {
+  if (!description) return '';
+
+  const text = description.replace(/\s+/g, ' ').trim();
+  if (text.length <= 165) return text;
+
+  return `${text.slice(0, 162).trimEnd()}...`;
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql

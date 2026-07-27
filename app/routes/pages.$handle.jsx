@@ -5,7 +5,7 @@ import {redirectIfHandleIsLocalized} from '~/lib/redirect';
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
+  return [{title: `Baliza | ${data?.page.title ?? ''}`}];
 };
 
 /**
@@ -31,20 +31,19 @@ async function loadCriticalData({context, request, params}) {
     throw new Error('Missing page handle');
   }
 
-  const [{page}] = await Promise.all([
-    context.storefront.query(PAGE_QUERY, {
-      variables: {
-        handle: params.handle,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
+  let {page} = await context.storefront.query(PAGE_QUERY, {
+    variables: {
+      handle: params.handle,
+    },
+  });
 
   if (!page) {
-    throw new Response('Not Found', {status: 404});
+    page = FALLBACK_PAGES[params.handle];
   }
 
-  redirectIfHandleIsLocalized(request, {handle: params.handle, data: page});
+  if (!page) throw new Response('Not Found', {status: 404});
+
+  if (page.id) redirectIfHandleIsLocalized(request, {handle: params.handle, data: page});
 
   return {
     page,
@@ -57,7 +56,7 @@ async function loadCriticalData({context, request, params}) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  * @param {Route.LoaderArgs}
  */
-function loadDeferredData({context}) {
+function loadDeferredData() {
   return {};
 }
 
@@ -94,6 +93,29 @@ const PAGE_QUERY = `#graphql
     }
   }
 `;
+
+const FALLBACK_PAGES = {
+  about: {
+    handle: 'about',
+    title: 'About Baliza',
+    body: `
+      <section class="page-fallback">
+        <p>Baliza creates premium everyday essentials with a focus on clean design, comfort, and dependable quality.</p>
+        <p>Our pieces are built for daily wear: soft fabrics, modern fits, and details that feel considered without being loud.</p>
+      </section>
+    `,
+  },
+  contact: {
+    handle: 'contact',
+    title: 'Contact Us',
+    body: `
+      <section class="page-fallback">
+        <p>Need help with an order, sizing, shipping, or returns? We are here to help.</p>
+        <p>Email us at <a href="mailto:support@baliza.in">support@baliza.in</a> and our team will get back to you as soon as possible.</p>
+      </section>
+    `,
+  },
+};
 
 /** @typedef {import('./+types/pages.$handle').Route} Route */
 /** @typedef {ReturnType<typeof useLoaderData<typeof loader>>} LoaderReturnData */

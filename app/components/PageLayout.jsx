@@ -4,6 +4,7 @@ import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
+import {WishlistDrawer} from '~/components/WishlistDrawer';
 import {
   SEARCH_ENDPOINT,
   SearchFormPredictive,
@@ -19,18 +20,26 @@ export function PageLayout({
   footer,
   header,
   isLoggedIn,
+  localization,
   publicStoreDomain,
 }) {
   return (
     <Aside.Provider>
       <CartAside cart={cart} />
       <SearchAside />
-      <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
+      <WishlistAside />
+      <MobileMenuAside
+        header={header}
+        publicStoreDomain={publicStoreDomain}
+        isLoggedIn={isLoggedIn}
+        localization={localization}
+      />
       {header && (
         <Header
           header={header}
           cart={cart}
           isLoggedIn={isLoggedIn}
+          localization={localization}
           publicStoreDomain={publicStoreDomain}
         />
       )}
@@ -38,6 +47,7 @@ export function PageLayout({
       <Footer
         footer={footer}
         header={header}
+        localization={localization}
         publicStoreDomain={publicStoreDomain}
       />
     </Aside.Provider>
@@ -57,6 +67,14 @@ function CartAside({cart}) {
           }}
         </Await>
       </Suspense>
+    </Aside>
+  );
+}
+
+function WishlistAside() {
+  return (
+    <Aside type="wishlist" heading="Wishlist">
+      <WishlistDrawer />
     </Aside>
   );
 }
@@ -180,19 +198,40 @@ function SearchAside() {
  * @param {{
  *   header: PageLayoutProps['header'];
  *   publicStoreDomain: PageLayoutProps['publicStoreDomain'];
+ *   isLoggedIn: PageLayoutProps['isLoggedIn'];
+ *   localization: PageLayoutProps['localization'];
  * }}
  */
-function MobileMenuAside({header, publicStoreDomain}) {
+function MobileMenuAside({header, publicStoreDomain, isLoggedIn, localization}) {
   return (
     header.menu &&
     header.shop.primaryDomain?.url && (
       <Aside type="mobile" heading="Menu">
-        <HeaderMenu
-          menu={header.menu}
-          viewport="mobile"
-          primaryDomainUrl={header.shop.primaryDomain.url}
-          publicStoreDomain={publicStoreDomain}
-        />
+        <Suspense
+          fallback={
+            <HeaderMenu
+              menu={header.menu}
+              viewport="mobile"
+              primaryDomainUrl={header.shop.primaryDomain.url}
+              publicStoreDomain={publicStoreDomain}
+              isLoggedIn={false}
+              localization={localization}
+            />
+          }
+        >
+          <Await resolve={isLoggedIn}>
+            {(loggedIn) => (
+              <HeaderMenu
+                menu={header.menu}
+                viewport="mobile"
+                primaryDomainUrl={header.shop.primaryDomain.url}
+                publicStoreDomain={publicStoreDomain}
+                isLoggedIn={loggedIn}
+                localization={localization}
+              />
+            )}
+          </Await>
+        </Suspense>
       </Aside>
     )
   );
@@ -204,6 +243,7 @@ function MobileMenuAside({header, publicStoreDomain}) {
  * @property {Promise<FooterQuery|null>} footer
  * @property {HeaderQuery} header
  * @property {Promise<boolean>} isLoggedIn
+ * @property {RootLocalization} localization
  * @property {string} publicStoreDomain
  * @property {React.ReactNode} [children]
  */
@@ -211,3 +251,4 @@ function MobileMenuAside({header, publicStoreDomain}) {
 /** @typedef {import('storefrontapi.generated').CartApiQueryFragment} CartApiQueryFragment */
 /** @typedef {import('storefrontapi.generated').FooterQuery} FooterQuery */
 /** @typedef {import('storefrontapi.generated').HeaderQuery} HeaderQuery */
+/** @typedef {import('storefrontapi.generated').LocalizationQuery['localization']} RootLocalization */

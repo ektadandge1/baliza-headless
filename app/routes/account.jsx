@@ -3,6 +3,7 @@ import {
   Form,
   NavLink,
   Outlet,
+  redirect,
   useLoaderData,
 } from 'react-router';
 import {CUSTOMER_DETAILS_QUERY} from '~/graphql/customer-account/CustomerDetailsQuery';
@@ -16,6 +17,11 @@ export function shouldRevalidate() {
  */
 export async function loader({context}) {
   const {customerAccount} = context;
+
+  if (!(await customerAccount.isLoggedIn())) {
+    return redirect('/account/login');
+  }
+
   const {data, errors} = await customerAccount.query(CUSTOMER_DETAILS_QUERY, {
     variables: {
       language: customerAccount.i18n.language,
@@ -67,27 +73,32 @@ function AccountMenu() {
   }
 
   return (
-    <nav role="navigation">
-      <NavLink to="/account/orders" style={isActiveStyle}>
-        Orders &nbsp;
-      </NavLink>
-      &nbsp;|&nbsp;
-      <NavLink to="/account/profile" style={isActiveStyle}>
-        &nbsp; Profile &nbsp;
-      </NavLink>
-      &nbsp;|&nbsp;
-      <NavLink to="/account/addresses" style={isActiveStyle}>
-        &nbsp; Addresses &nbsp;
-      </NavLink>
-      &nbsp;|&nbsp;
-      <Logout />
-    </nav>
+      <nav className="account-menu" role="navigation">
+        <NavLink to="/account/orders" style={isActiveStyle}>
+          Orders &nbsp;
+        </NavLink>
+        &nbsp;|&nbsp;
+        <NavLink to="/account/profile" style={isActiveStyle}>
+          &nbsp; Profile &nbsp;
+        </NavLink>
+        &nbsp;|&nbsp;
+        <NavLink to="/account/addresses" style={isActiveStyle}>
+          &nbsp; Addresses &nbsp;
+        </NavLink>
+        &nbsp;|&nbsp;
+        <NavLink to="/account/recover" style={isActiveStyle}>
+          &nbsp; Forgot password &nbsp;
+        </NavLink>
+        &nbsp;|&nbsp;
+        <Logout />
+      </nav>
   );
 }
 
 function Logout() {
   return (
     <Form className="account-logout" method="POST" action="/account/logout">
+      <input type="hidden" name="confirm" value="yes" />
       &nbsp;<button type="submit">Sign out</button>
     </Form>
   );

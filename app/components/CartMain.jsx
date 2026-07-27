@@ -3,6 +3,7 @@ import {Link} from 'react-router';
 import {useAside} from '~/components/Aside';
 import {CartLineItem} from '~/components/CartLineItem';
 import {CartSummary} from './CartSummary';
+import {CartRecommendations} from '~/components/CartRecommendations';
 /**
  * Returns a map of all line items and their children.
  * @param {CartLine[]} lines
@@ -54,8 +55,14 @@ export function CartMain({layout, cart: originalCart}) {
         <p id="cart-lines" className="sr-only">
           Line items
         </p>
+        {layout === 'aside' && cartHasItems && (
+          <div className="cart-drawer-heading">
+            <span>Baliza essentials</span>
+            <h2>Your selection</h2>
+          </div>
+        )}
         <div>
-          <ul aria-labelledby="cart-lines">
+          <ul className="cart-items" aria-labelledby="cart-lines">
             {(cart?.lines?.nodes ?? []).map((line) => {
               // we do not render non-parent lines at the root of the cart
               if (
@@ -76,6 +83,9 @@ export function CartMain({layout, cart: originalCart}) {
           </ul>
         </div>
         {cartHasItems && <CartSummary cart={cart} layout={layout} />}
+        {cartHasItems && (
+          <CartRecommendations lines={cart?.lines?.nodes ?? []} />
+        )}
       </div>
     </section>
   );
@@ -90,15 +100,19 @@ export function CartMain({layout, cart: originalCart}) {
 function CartEmpty({hidden = false}) {
   const {close} = useAside();
   return (
-    <div hidden={hidden}>
-      <br />
+    <div className="cart-empty" hidden={hidden}>
+      <div className="cart-empty-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+          <path d="M4 8h16l-1 12H5L4 8Z" />
+          <path d="M8 9V6a4 4 0 0 1 8 0v3" />
+        </svg>
+      </div>
       <p>
         Looks like you haven&rsquo;t added anything yet, let&rsquo;s get you
         started!
       </p>
-      <br />
       <Link to="/collections" onClick={close} prefetch="viewport">
-        Continue shopping →
+        Continue shopping <span aria-hidden="true">&rarr;</span>
       </Link>
     </div>
   );
