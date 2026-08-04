@@ -88,46 +88,24 @@ function EnterpriseBannerSection() {
           <img
             src="https://cdn.shopify.com/s/files/1/0775/4976/4773/files/New-Banner--3_1.jpg?v=1784281182"
             alt="Premium Baliza t-shirt collection"
+            width="1920"
+            height="900"
             loading="eager"
             fetchPriority="high"
+            decoding="async"
           />
-          <div className="enterprise-slide__shade" />
-          <div className="enterprise-slide__content">
-            <span>New season edit</span>
-            <h1>Premium T-Shirts Made For Everyday Confidence</h1>
-            <p>Clean essentials, graphic statements, and polished fits built for modern wardrobes.</p>
-            <div className="enterprise-slide__actions">
-              <Link to="/collections/all" prefetch="intent" className="enterprise-slide__btn enterprise-slide__btn--primary">
-                Shop Collection
-              </Link>
-              <Link to="/collections/new-arrivals" prefetch="intent" className="enterprise-slide__btn enterprise-slide__btn--secondary">
-                New Arrivals
-              </Link>
-            </div>
-          </div>
         </article>
 
         <article className="enterprise-slide enterprise-slide--two">
           <img
             src="https://cdn.shopify.com/s/files/1/0775/4976/4773/files/Mian-banner-8-Recovered_1.jpg?v=1784281182"
             alt="Baliza bestselling t-shirt collection"
-            loading="eager"
-            fetchPriority="high"
+            width="1920"
+            height="900"
+            loading="lazy"
+            fetchPriority="low"
+            decoding="async"
           />
-          <div className="enterprise-slide__shade" />
-          <div className="enterprise-slide__content">
-            <span>Best sellers</span>
-            <h1>Statement Pieces That Move Fast</h1>
-            <p>Discover high-impact t-shirts, easy everyday polos, and the fits customers keep coming back for.</p>
-            <div className="enterprise-slide__actions">
-              <Link to="/collections/best-sellers" prefetch="intent" className="enterprise-slide__btn enterprise-slide__btn--primary">
-                Shop Best Sellers
-              </Link>
-              <Link to="/collections/t-shirts" prefetch="intent" className="enterprise-slide__btn enterprise-slide__btn--secondary">
-                Explore T-Shirts
-              </Link>
-            </div>
-          </div>
         </article>
       </div>
 

@@ -17,8 +17,27 @@ export function ProductForm({productOptions, selectedVariant}) {
         // If there is only a single value in the option values, don't display the option
         if (option.optionValues.length === 1) return null;
 
+        // Avoid showing a misleading duplicate Color selector when a product's
+        // Shopify options were configured with the same values as Size.
+        if (
+          option.name.toLowerCase() === 'color' &&
+          !option.optionValues.some((value) => value.swatch) &&
+          productOptions.some(
+            (otherOption) =>
+              otherOption !== option &&
+              haveSameOptionValues(option, otherOption),
+          )
+        ) {
+          return null;
+        }
+
         return (
-          <div className="product-form__option" key={option.name}>
+          <div
+            className={`product-form__option product-form__option--${option.name
+              .toLowerCase()
+              .replace(/\s+/g, '-')}`}
+            key={option.name}
+          >
             <div className="product-form__option-head">
               <h5>{option.name}</h5>
               <span>{getSelectedOptionName(option)}</span>
@@ -84,6 +103,11 @@ export function ProductForm({productOptions, selectedVariant}) {
           </div>
         );
       })}
+      <div className="product-form__bundle-promo" role="note">
+        <span>Mix & Match</span>
+        <strong>Buy 2 save 10%, buy 3 save 15%, buy 5 save 20%.</strong>
+        <small>Discount applies automatically in your cart.</small>
+      </div>
       <div className="product-form__actions">
         <AddToCartButton
           className="product-form__submit"
@@ -107,6 +131,20 @@ export function ProductForm({productOptions, selectedVariant}) {
         </AddToCartButton>
       </div>
     </div>
+  );
+}
+
+function haveSameOptionValues(firstOption, secondOption) {
+  const firstValues = firstOption.optionValues
+    .map((value) => value.name.toLowerCase())
+    .sort();
+  const secondValues = secondOption.optionValues
+    .map((value) => value.name.toLowerCase())
+    .sort();
+
+  return (
+    firstValues.length === secondValues.length &&
+    firstValues.every((value, index) => value === secondValues[index])
   );
 }
 

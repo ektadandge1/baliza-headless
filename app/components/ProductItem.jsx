@@ -5,6 +5,7 @@ import {AddToCartButton} from '~/components/AddToCartButton';
 import {ProductRating} from '~/components/ProductRating';
 import {JudgeMePreviewBadge} from '~/components/JudgeMe';
 import {WishlistButton} from '~/components/WishlistButton';
+import {getSwatchColor} from '~/lib/colorSwatches';
 import {useVariantUrl} from '~/lib/variants';
 
 /**
@@ -27,13 +28,14 @@ export function ProductItem({product, loading, ratings, judgeMeBadge}) {
     getSelectedOptions(initialVariant),
   );
   const selectedVariant =
-    findVariantForOptions(variants, selectedOptions) ??
-    initialVariant;
+    findVariantForOptions(variants, selectedOptions) ?? initialVariant;
   const price = selectedVariant?.price ?? product.priceRange?.minVariantPrice;
   const compareAt =
-    selectedVariant?.compareAtPrice ?? product.compareAtPriceRange?.minVariantPrice;
+    selectedVariant?.compareAtPrice ??
+    product.compareAtPriceRange?.minVariantPrice;
   const hasVisibleVariants =
-    optionGroups.length > 0 && getVariantLabel(initialVariant) !== 'Default Title';
+    optionGroups.length > 0 &&
+    getVariantLabel(initialVariant) !== 'Default Title';
 
   const onSale =
     compareAt &&
@@ -57,7 +59,9 @@ export function ProductItem({product, loading, ratings, judgeMeBadge}) {
         ),
       );
 
-      return fallbackVariant ? getSelectedOptions(fallbackVariant) : nextOptions;
+      return fallbackVariant
+        ? getSelectedOptions(fallbackVariant)
+        : nextOptions;
     });
   };
 
@@ -127,7 +131,10 @@ export function ProductItem({product, loading, ratings, judgeMeBadge}) {
         </div>
 
         {hasVisibleVariants && (
-          <div className="product-options" aria-label={`${product.title} options`}>
+          <div
+            className="product-options"
+            aria-label={`${product.title} options`}
+          >
             {optionGroups.map((group) => {
               const isColorGroup = isColorOption(group.name);
               return (
@@ -140,9 +147,7 @@ export function ProductItem({product, loading, ratings, judgeMeBadge}) {
                   </div>
                   <div
                     className={
-                      isColorGroup
-                        ? 'product-color-list'
-                        : 'product-size-list'
+                      isColorGroup ? 'product-color-list' : 'product-size-list'
                     }
                   >
                     {group.values.map((value) => {
@@ -206,7 +211,8 @@ function getOptionGroups(variants) {
 
 function getSelectedOptions(variant) {
   return Object.fromEntries(
-    variant?.selectedOptions?.map((option) => [option.name, option.value]) ?? [],
+    variant?.selectedOptions?.map((option) => [option.name, option.value]) ??
+      [],
   );
 }
 
@@ -237,29 +243,6 @@ function isOptionValueAvailable(variants, selectedOptions, optionName, value) {
 
 function isColorOption(name) {
   return /colou?r/i.test(name);
-}
-
-function getSwatchColor(value) {
-  const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const colorMap = [
-    ['white', '#f6f2ea'],
-    ['black', '#111111'],
-    ['navy', '#192b4d'],
-    ['blue', '#2f65b8'],
-    ['greymelange', '#9b9b96'],
-    ['graymelange', '#9b9b96'],
-    ['grey', '#8f8f8f'],
-    ['gray', '#8f8f8f'],
-    ['red', '#b92d2d'],
-    ['green', '#2d6b4f'],
-    ['olive', '#6f7351'],
-    ['beige', '#cbb891'],
-    ['cream', '#efe3c8'],
-    ['brown', '#6f4935'],
-  ];
-  const match = colorMap.find(([name]) => normalized.includes(name));
-
-  return match?.[1] ?? '#d7d2c8';
 }
 
 function getVariantLabel(variant) {

@@ -1,19 +1,19 @@
 import {useState, useMemo, useCallback} from 'react';
+import {getSwatchColor, getSwatchColorName} from '~/lib/colorSwatches';
 
-const COLOR_MAP = {
-  white: '#f6f2ea', black: '#111111', navy: '#192b4d', blue: '#2f65b8',
-  grey: '#8f8f8f', gray: '#8f8f8f', red: '#b92d2d', green: '#2d6b4f',
-  olive: '#6f7351', beige: '#cbb891', cream: '#efe3c8', brown: '#6f4935',
-  pink: '#e8a0bf', yellow: '#f5d76e', orange: '#e67e22', purple: '#7d3c98',
-};
-
-const SIZE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', '4XL', '5XL'];
-
-function getSwatchColor(value) {
-  const norm = value.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const match = Object.entries(COLOR_MAP).find(([k]) => norm.includes(k));
-  return match?.[1] ?? '#d7d2c8';
-}
+const SIZE_ORDER = [
+  'XXS',
+  'XS',
+  'S',
+  'M',
+  'L',
+  'XL',
+  'XXL',
+  '2XL',
+  '3XL',
+  '4XL',
+  '5XL',
+];
 
 function isColorOption(name) {
   return /colou?r/i.test(name);
@@ -56,13 +56,11 @@ function normalizeSizeValue(value) {
 
 function normalizeColorValue(value) {
   const raw = String(value || '').trim();
-  const norm = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
-
   if (normalizeSizeValue(raw).match(/^(XXS|XS|S|M|L|XL|XXL|3XL|4XL|5XL)$/)) {
     return null;
   }
 
-  const color = Object.keys(COLOR_MAP).find((key) => norm.includes(key));
+  const color = getSwatchColorName(raw);
   if (color) return color === 'grey' ? 'Gray' : formatLabel(color);
 
   return formatLabel(raw);
@@ -146,12 +144,13 @@ function extractFilters(products) {
 
   // Variant options (color, size, etc.)
   for (const [key, group] of variantOptions) {
-    const sorted = sortFilterValues(key, [...group.values.entries()])
-      .map(([label, count]) => ({
+    const sorted = sortFilterValues(key, [...group.values.entries()]).map(
+      ([label, count]) => ({
         id: `${key}-${label}`,
         label,
         count,
-      }));
+      }),
+    );
 
     if (!sorted.length) continue;
 
@@ -205,9 +204,7 @@ function extractFilters(products) {
     id: 'availability',
     label: 'Availability',
     type: 'availability',
-    values: [
-      {id: 'instock', label: 'In Stock', count: inStock},
-    ],
+    values: [{id: 'instock', label: 'In Stock', count: inStock}],
   });
 
   return filters;
@@ -227,11 +224,19 @@ function isActive(searchParams, key, value) {
  *   onPriceApply: (min: string, max: string) => void;
  * }} props
  */
-export function CollectionFilters({products, searchParams, onFilterChange, onToggleFilter, onPriceApply}) {
+export function CollectionFilters({
+  products,
+  searchParams,
+  onFilterChange,
+  onToggleFilter,
+  onPriceApply,
+}) {
   const filters = useMemo(() => extractFilters(products), [products]);
   const [openSections, setOpenSections] = useState(() => {
     const initial = {};
-    filters.forEach((f) => { initial[f.id] = true; });
+    filters.forEach((f) => {
+      initial[f.id] = true;
+    });
     return initial;
   });
 
@@ -261,7 +266,15 @@ export function CollectionFilters({products, searchParams, onFilterChange, onTog
   );
 }
 
-function FilterSection({filter, isOpen, onToggle, searchParams, onFilterChange, onToggleFilter, onPriceApply}) {
+function FilterSection({
+  filter,
+  isOpen,
+  onToggle,
+  searchParams,
+  onFilterChange,
+  onToggleFilter,
+  onPriceApply,
+}) {
   return (
     <div className={`filter-section ${isOpen ? 'is-open' : ''}`}>
       <button
@@ -273,8 +286,14 @@ function FilterSection({filter, isOpen, onToggle, searchParams, onFilterChange, 
         <span className="filter-section__title">{filter.label}</span>
         <svg
           className="filter-section__chevron"
-          width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -335,9 +354,12 @@ function ColorSwatchList({filter, searchParams, onToggleFilter}) {
 }
 
 function CheckboxList({filter, searchParams, onToggleFilter}) {
-  const key = filter.type === 'product_type' ? 'product_type'
-    : filter.type === 'vendor' ? 'vendor'
-    : filter.label.toLowerCase().replace(/\s+/g, '_');
+  const key =
+    filter.type === 'product_type'
+      ? 'product_type'
+      : filter.type === 'vendor'
+        ? 'vendor'
+        : filter.label.toLowerCase().replace(/\s+/g, '_');
 
   return (
     <ul className="filter-checkboxes">
@@ -371,7 +393,9 @@ function AvailabilityFilter({searchParams, onFilterChange}) {
           <input
             type="checkbox"
             checked={inStock}
-            onChange={() => onFilterChange('available', inStock ? null : 'true')}
+            onChange={() =>
+              onFilterChange('available', inStock ? null : 'true')
+            }
           />
           <span className="filter-checkbox__mark" />
           <span className="filter-checkbox__label">In Stock</span>
@@ -393,29 +417,41 @@ function PriceFilter({filter, searchParams, onPriceApply}) {
     onPriceApply(localMin || '', localMax || '');
   }, [localMin, localMax, onPriceApply]);
 
-  const handleMinSlider = useCallback((e) => {
-    const val = Number(e.target.value);
-    setSliderMin(val);
-    setLocalMin(val > filter.min ? String(val) : '');
-  }, [filter.min]);
+  const handleMinSlider = useCallback(
+    (e) => {
+      const val = Number(e.target.value);
+      setSliderMin(val);
+      setLocalMin(val > filter.min ? String(val) : '');
+    },
+    [filter.min],
+  );
 
-  const handleMaxSlider = useCallback((e) => {
-    const val = Number(e.target.value);
-    setSliderMax(val);
-    setLocalMax(val < filter.max ? String(val) : '');
-  }, [filter.max]);
+  const handleMaxSlider = useCallback(
+    (e) => {
+      const val = Number(e.target.value);
+      setSliderMax(val);
+      setLocalMax(val < filter.max ? String(val) : '');
+    },
+    [filter.max],
+  );
 
-  const handleMinInput = useCallback((e) => {
-    const val = e.target.value;
-    setLocalMin(val);
-    setSliderMin(Number(val) || filter.min);
-  }, [filter.min]);
+  const handleMinInput = useCallback(
+    (e) => {
+      const val = e.target.value;
+      setLocalMin(val);
+      setSliderMin(Number(val) || filter.min);
+    },
+    [filter.min],
+  );
 
-  const handleMaxInput = useCallback((e) => {
-    const val = e.target.value;
-    setLocalMax(val);
-    setSliderMax(Number(val) || filter.max);
-  }, [filter.max]);
+  const handleMaxInput = useCallback(
+    (e) => {
+      const val = e.target.value;
+      setLocalMax(val);
+      setSliderMax(Number(val) || filter.max);
+    },
+    [filter.max],
+  );
 
   return (
     <div className="filter-price">
@@ -466,7 +502,9 @@ function PriceFilter({filter, searchParams, onPriceApply}) {
             onKeyDown={(e) => e.key === 'Enter' && apply()}
           />
         </div>
-        <span className="filter-price__sep" aria-hidden="true">&ndash;</span>
+        <span className="filter-price__sep" aria-hidden="true">
+          &ndash;
+        </span>
         <div className="filter-price__field">
           <label htmlFor={`price-max-${filter.id}`}>Max</label>
           <input

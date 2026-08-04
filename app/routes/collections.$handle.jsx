@@ -490,7 +490,7 @@ export default function Collection() {
                     product={product}
                     ratings={ratings}
                     judgeMeBadge={judgeMeWidgetEnabled}
-                    loading={index < 12 ? 'eager' : undefined}
+                    loading={index < 3 ? 'eager' : 'lazy'}
                   />
                 ))}
               </div>
@@ -521,7 +521,7 @@ export default function Collection() {
                   product={product}
                   ratings={ratings}
                   judgeMeBadge={judgeMeWidgetEnabled}
-                  loading={index < 12 ? 'eager' : undefined}
+                  loading={index < 3 ? 'eager' : 'lazy'}
                 />
               )}
             </PaginatedResourceSection>

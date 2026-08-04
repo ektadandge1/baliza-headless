@@ -1,6 +1,13 @@
 import {useLoaderData, data} from 'react-router';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
+import {getSyncedBundleDiscountCodes} from '~/lib/bundleDiscounts';
+
+const BUNDLE_SYNC_ACTIONS = new Set([
+  CartForm.ACTIONS.LinesAdd,
+  CartForm.ACTIONS.LinesUpdate,
+  CartForm.ACTIONS.LinesRemove,
+]);
 
 /**
  * @type {Route.MetaFunction}
@@ -76,6 +83,10 @@ export async function action({request, context}) {
       throw new Error(`${action} cart action is not defined`);
   }
 
+  if (BUNDLE_SYNC_ACTIONS.has(action)) {
+    result = await syncBundleDiscountCodes(cart, result);
+  }
+
   const cartId = result?.cart?.id;
   const headers = cartId ? cart.setCartId(result.cart.id) : new Headers();
   const {cart: cartResult, errors, warnings} = result;
@@ -97,6 +108,26 @@ export async function action({request, context}) {
     },
     {status, headers},
   );
+}
+
+async function syncBundleDiscountCodes(cart, result) {
+  const currentCart = result?.cart;
+  const currentCodes =
+    currentCart?.discountCodes?.map((discount) => discount.code) ?? [];
+  const nextCodes = getSyncedBundleDiscountCodes(currentCart, currentCodes);
+
+  if (areSameDiscountCodes(currentCodes, nextCodes)) {
+    return result;
+  }
+
+  return await cart.updateDiscountCodes(nextCodes);
+}
+
+function areSameDiscountCodes(firstCodes, secondCodes) {
+  const normalize = (codes) =>
+    codes.map((code) => String(code).toUpperCase()).sort().join('|');
+
+  return normalize(firstCodes) === normalize(secondCodes);
 }
 
 /**

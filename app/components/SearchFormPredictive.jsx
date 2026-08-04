@@ -1,8 +1,10 @@
 import {useFetcher, useNavigate} from 'react-router';
-import React, {useRef, useEffect} from 'react';
+import {useRef, useEffect} from 'react';
 import {useAside} from './Aside';
 
 export const SEARCH_ENDPOINT = '/search';
+const MIN_PREDICTIVE_SEARCH_LENGTH = 2;
+const PREDICTIVE_SEARCH_DELAY = 220;
 
 /**
  *  Search form component that sends search requests to the `/search` route
@@ -15,6 +17,8 @@ export function SearchFormPredictive({
 }) {
   const fetcher = useFetcher({key: 'search'});
   const inputRef = useRef(null);
+  const searchTimerRef = useRef(null);
+  const lastSubmittedTermRef = useRef('');
   const navigate = useNavigate();
   const aside = useAside();
 
@@ -36,16 +40,41 @@ export function SearchFormPredictive({
 
   /** Fetch search results based on the input value */
   function fetchResults(event) {
-    void fetcher.submit(
-      {q: event.target.value || '', limit: 5, predictive: true},
-      {method: 'GET', action: SEARCH_ENDPOINT},
-    );
+    const term = (event.target.value || '').trim();
+
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+
+    if (term.length > 0 && term.length < MIN_PREDICTIVE_SEARCH_LENGTH) {
+      return;
+    }
+
+    if (term === lastSubmittedTermRef.current) {
+      return;
+    }
+
+    searchTimerRef.current = setTimeout(() => {
+      lastSubmittedTermRef.current = term;
+      void fetcher.submit(
+        {q: term, limit: 5, predictive: true},
+        {method: 'GET', action: SEARCH_ENDPOINT},
+      );
+    }, term ? PREDICTIVE_SEARCH_DELAY : 0);
   }
 
   // ensure the passed input has a type of search, because SearchResults
   // will select the element based on the input
   useEffect(() => {
     inputRef?.current?.setAttribute('type', 'search');
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
   }, []);
 
   if (typeof children !== 'function') {

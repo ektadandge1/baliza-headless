@@ -57,9 +57,26 @@ export default function Orders() {
   /** @type {LoaderReturnData} */
   const {customer, filters} = useLoaderData();
   const {orders} = customer;
+  const orderCount = orders?.nodes?.length ?? 0;
+  const hasFilters = !!(filters.name || filters.confirmationNumber);
 
   return (
     <div className="orders">
+      <header className="orders-header">
+        <div>
+          <span className="orders-header__eyebrow">Order history</span>
+          <h2>Your purchases</h2>
+          <p>
+            Search by order or confirmation number and review the latest status
+            for every Baliza purchase.
+          </p>
+        </div>
+        <div className="orders-header__stats" aria-label="Order summary">
+          <span>{orderCount}</span>
+          <small>{hasFilters ? 'Matching orders' : 'Recent orders'}</small>
+        </div>
+      </header>
+
       <OrderSearchForm currentFilters={filters} />
       <OrdersTable orders={orders} filters={filters} />
     </div>
@@ -76,9 +93,13 @@ function OrdersTable({orders, filters}) {
   const hasFilters = !!(filters.name || filters.confirmationNumber);
 
   return (
-    <div className="acccount-orders" aria-live="polite">
+    <div className="account-orders" aria-live="polite">
       {orders?.nodes.length ? (
-        <PaginatedResourceSection connection={orders}>
+        <PaginatedResourceSection
+          connection={orders}
+          ariaLabel="Customer orders"
+          resourcesClassName="account-orders__list"
+        >
           {({node: order}) => <OrderItem key={order.id} order={order} />}
         </PaginatedResourceSection>
       ) : (
@@ -93,22 +114,36 @@ function OrdersTable({orders, filters}) {
  */
 function EmptyOrders({hasFilters = false}) {
   return (
-    <div>
+    <div className="orders-empty">
+      <span className="orders-empty__icon" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M7 8h10M7 12h10M9 16h6M6 3h12a1 1 0 0 1 1 1v17l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 0 1 1-1Z"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.6"
+          />
+        </svg>
+      </span>
       {hasFilters ? (
         <>
-          <p>No orders found matching your search.</p>
-          <br />
-          <p>
-            <Link to="/account/orders">Clear filters →</Link>
-          </p>
+          <h3>No matching orders</h3>
+          <p>Try another order number or clear the current filters.</p>
+          <Link className="orders-empty__link" to="/account/orders">
+            Clear filters
+          </Link>
         </>
       ) : (
         <>
-          <p>You haven&apos;t placed any orders yet.</p>
-          <br />
+          <h3>No orders yet</h3>
           <p>
-            <Link to="/collections">Start Shopping →</Link>
+            Your Baliza order history will appear here after your first
+            purchase.
           </p>
+          <Link className="orders-empty__link" to="/collections">
+            Start shopping
+          </Link>
         </>
       )}
     </div>
@@ -121,7 +156,7 @@ function EmptyOrders({hasFilters = false}) {
  * }}
  */
 function OrderSearchForm({currentFilters}) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const navigation = useNavigation();
   const isSearching =
     navigation.state !== 'idle' &&
@@ -156,35 +191,50 @@ function OrderSearchForm({currentFilters}) {
       aria-label="Search orders"
     >
       <fieldset className="order-search-fieldset">
-        <legend className="order-search-legend">Filter Orders</legend>
+        <legend className="order-search-legend">Filter orders</legend>
+        <p className="order-search-help">
+          Find purchases quickly using the order number or confirmation code
+          from your receipt.
+        </p>
 
         <div className="order-search-inputs">
-          <input
-            type="search"
-            name={ORDER_FILTER_FIELDS.NAME}
-            placeholder="Order #"
-            aria-label="Order number"
-            defaultValue={currentFilters.name || ''}
-            className="order-search-input"
-          />
-          <input
-            type="search"
-            name={ORDER_FILTER_FIELDS.CONFIRMATION_NUMBER}
-            placeholder="Confirmation #"
-            aria-label="Confirmation number"
-            defaultValue={currentFilters.confirmationNumber || ''}
-            className="order-search-input"
-          />
+          <label className="order-search-field">
+            <span>Order number</span>
+            <input
+              type="search"
+              name={ORDER_FILTER_FIELDS.NAME}
+              placeholder="Example: 1001"
+              aria-label="Order number"
+              defaultValue={currentFilters.name || ''}
+              className="order-search-input"
+            />
+          </label>
+          <label className="order-search-field">
+            <span>Confirmation number</span>
+            <input
+              type="search"
+              name={ORDER_FILTER_FIELDS.CONFIRMATION_NUMBER}
+              placeholder="Example: ABC123"
+              aria-label="Confirmation number"
+              defaultValue={currentFilters.confirmationNumber || ''}
+              className="order-search-input"
+            />
+          </label>
         </div>
 
         <div className="order-search-buttons">
-          <button type="submit" disabled={isSearching}>
+          <button
+            type="submit"
+            className="order-search-submit"
+            disabled={isSearching}
+          >
             {isSearching ? 'Searching' : 'Search'}
           </button>
           {hasFilters && (
             <button
               type="button"
               disabled={isSearching}
+              className="order-search-clear"
               onClick={() => {
                 setSearchParams(new URLSearchParams());
                 formRef.current?.reset();
@@ -205,23 +255,55 @@ function OrderSearchForm({currentFilters}) {
 function OrderItem({order}) {
   const fulfillmentStatus = flattenConnection(order.fulfillments)[0]?.status;
   return (
-    <>
-      <fieldset>
-        <Link to={`/account/orders/${btoa(order.id)}`}>
-          <strong>#{order.number}</strong>
-        </Link>
-        <p>{new Date(order.processedAt).toDateString()}</p>
-        {order.confirmationNumber && (
-          <p>Confirmation: {order.confirmationNumber}</p>
-        )}
-        <p>{order.financialStatus}</p>
-        {fulfillmentStatus && <p>{fulfillmentStatus}</p>}
+    <article className="order-card">
+      <div className="order-card__main">
+        <div className="order-card__number">
+          <span>Order</span>
+          <Link to={`/account/orders/${btoa(order.id)}`}>#{order.number}</Link>
+        </div>
+        <div className="order-card__meta">
+          <span>{formatOrderDate(order.processedAt)}</span>
+          {order.confirmationNumber ? (
+            <span>Confirmation {order.confirmationNumber}</span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="order-card__status" aria-label="Order status">
+        <span>{formatStatus(order.financialStatus)}</span>
+        {fulfillmentStatus ? (
+          <span>{formatStatus(fulfillmentStatus)}</span>
+        ) : null}
+      </div>
+
+      <div className="order-card__total">
+        <small>Total</small>
         <Money data={order.totalPrice} />
-        <Link to={`/account/orders/${btoa(order.id)}`}>View Order →</Link>
-      </fieldset>
-      <br />
-    </>
+      </div>
+
+      <Link
+        className="order-card__link"
+        to={`/account/orders/${btoa(order.id)}`}
+      >
+        View order
+      </Link>
+    </article>
   );
+}
+
+function formatOrderDate(date) {
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(date));
+}
+
+function formatStatus(status) {
+  return String(status || '')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 /**

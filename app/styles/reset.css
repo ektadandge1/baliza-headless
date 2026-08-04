@@ -15,20 +15,20 @@ html {
 }
 
 body {
-  font-family:
+  font-family: var(
+    --font-body,
     'Inter',
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    sans-serif;
+    sans-serif
+  );
   margin: 0;
   padding: 0;
-  font-size: 16px;
+  font-size: var(--text-base, 1rem);
   line-height: 1.5;
-  color: #111111;
-  background: #ffffff;
+  color: var(--color-text, #111111);
+  background: var(--color-bg, #ffffff);
 }
 
 h1,
@@ -43,48 +43,48 @@ p {
 }
 
 h1 {
-  font-size: 2.25rem;
+  font-size: var(--text-4xl, 2.25rem);
   font-weight: 700;
   line-height: 1.2;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6, 1.5rem);
   margin-top: 0;
   letter-spacing: -0.02em;
 }
 
 h2 {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl, 1.5rem);
   font-weight: 700;
   line-height: 1.3;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4, 1rem);
   margin-top: 0;
   letter-spacing: -0.01em;
 }
 
 h3 {
-  font-size: 1.25rem;
+  font-size: var(--text-xl, 1.25rem);
   font-weight: 600;
   line-height: 1.4;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3, 0.75rem);
 }
 
 h4 {
-  font-size: 1.125rem;
+  font-size: var(--text-lg, 1.125rem);
   font-weight: 600;
   line-height: 1.4;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2, 0.5rem);
 }
 
 h5 {
-  font-size: 1rem;
+  font-size: var(--text-base, 1rem);
   font-weight: 600;
   line-height: 1.4;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2, 0.5rem);
 }
 
 p {
-  font-size: 1rem;
+  font-size: var(--text-base, 1rem);
   line-height: 1.6;
-  color: #333333;
+  color: var(--color-text-soft, #333333);
 }
 
 a {
@@ -115,7 +115,7 @@ select {
 
 hr {
   border: none;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--color-border, #e5e5e5);
   margin: 0;
 }
 
@@ -135,22 +135,22 @@ body > main {
 }
 
 section {
-  padding: 2.5rem 0;
+  padding: var(--space-10, 2.5rem) 0;
 }
 
 @media (min-width: 768px) {
   section {
-    padding: 4rem 0;
+    padding: var(--space-16, 4rem) 0;
   }
 }
 
 fieldset {
   display: flex;
   flex-direction: column;
-  margin-bottom: 0.5rem;
-  padding: 1rem;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
+  margin-bottom: var(--space-2, 0.5rem);
+  padding: var(--space-4, 1rem);
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: var(--radius-md, 8px);
 }
 
 form {
@@ -158,18 +158,18 @@ form {
 }
 
 input {
-  border-radius: 6px;
-  border: 1px solid #e5e5e5;
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
-  margin-top: 0.25rem;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-border, #e5e5e5);
+  font-size: var(--text-base, 1rem);
+  margin-bottom: var(--space-2, 0.5rem);
+  margin-top: var(--space-1, 0.25rem);
   padding: 0.625rem 0.875rem;
-  transition: border-color 150ms ease;
+  transition: border-color var(--transition-fast, 150ms ease);
 }
 
 input:focus {
   outline: none;
-  border-color: #c9a96e;
+  border-color: var(--color-brand, #c9a96e);
 }
 
 legend {

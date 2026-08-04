@@ -7,7 +7,7 @@ import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
  */
 export async function loader(args) {
   // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
+  const deferredData = loadDeferredData();
 
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
@@ -41,7 +41,7 @@ async function loadCriticalData({context, request}) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  * @param {Route.LoaderArgs}
  */
-function loadDeferredData({context}) {
+function loadDeferredData() {
   return {};
 }
 
@@ -50,17 +50,18 @@ export default function Collections() {
   const {collections} = useLoaderData();
 
   return (
-    <div className="collections">
-      <h1>Collections</h1>
+    <div className="collections-page">
+      <h1 className="sr-only">Collections</h1>
+
       <PaginatedResourceSection
         connection={collections}
-        resourcesClassName="collections-grid"
+        resourcesClassName="collections-grid collections-grid--premium"
       >
         {({node: collection, index}) => (
           <CollectionItem
             key={collection.id}
             collection={collection}
-            index={index}
+            loading={index === 0 ? 'eager' : 'lazy'}
           />
         )}
       </PaginatedResourceSection>
@@ -71,27 +72,34 @@ export default function Collections() {
 /**
  * @param {{
  *   collection: CollectionFragment;
- *   index: number;
+ *   loading?: 'eager' | 'lazy';
  * }}
  */
-function CollectionItem({collection, index}) {
+function CollectionItem({collection, loading}) {
   return (
     <Link
-      className="collection-item"
+      className="collection-item collection-item--premium"
       key={collection.id}
       to={`/collections/${collection.handle}`}
       prefetch="intent"
     >
-      {collection?.image && (
-        <Image
-          alt={collection.image.altText || collection.title}
-          aspectRatio="1/1"
-          data={collection.image}
-          loading={index < 3 ? 'eager' : undefined}
-          sizes="(min-width: 45em) 400px, 100vw"
-        />
-      )}
-      <h5>{collection.title}</h5>
+      <div className="collection-item__media">
+        {collection?.image ? (
+          <Image
+            alt={collection.image.altText || collection.title}
+            aspectRatio="4/5"
+            data={collection.image}
+            loading={loading}
+            sizes="(min-width: 1024px) 420px, (min-width: 768px) 45vw, 100vw"
+          />
+        ) : (
+          <div className="collection-item__fallback" aria-hidden="true" />
+        )}
+      </div>
+
+      <div className="collection-item__info">
+        <h3 className="collection-item-title">{collection.title}</h3>
+      </div>
     </Link>
   );
 }
@@ -101,6 +109,7 @@ const COLLECTIONS_QUERY = `#graphql
     id
     title
     handle
+    description
     image {
       id
       url

@@ -1,6 +1,10 @@
 import {CartForm, Money} from '@shopify/hydrogen';
 import {useEffect, useId, useRef, useState} from 'react';
 import {useFetcher} from 'react-router';
+import {
+  BUNDLE_DISCOUNT_TIERS,
+  isBundleDiscountCode,
+} from '~/lib/bundleDiscounts';
 
 /**
  * @param {CartSummaryProps}
@@ -49,7 +53,7 @@ export function CartSummary({cart, layout}) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
-          Free shipping on orders over $100
+           Free shipping on orders over ₹500
         </div>
       )}
     </div>
@@ -101,7 +105,7 @@ function CartDiscounts({
               role="group"
               aria-labelledby={discountsHeadingId}
             >
-              <code>{codes?.join(', ')}</code>
+              <code>{codes?.map(formatDiscountCodeLabel).join(', ')}</code>
               &nbsp;
               <button type="submit" aria-label="Remove discount">
                 Remove
@@ -131,6 +135,16 @@ function CartDiscounts({
       </UpdateDiscountForm>
     </section>
   );
+}
+
+function formatDiscountCodeLabel(code) {
+  if (!isBundleDiscountCode(code)) return code;
+
+  const tier = BUNDLE_DISCOUNT_TIERS.find(
+    (item) => item.code === String(code).toUpperCase(),
+  );
+
+  return tier ? `Mix & Match ${tier.discount}% off` : code;
 }
 
 /**

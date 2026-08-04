@@ -1,8 +1,16 @@
-import {Suspense, useState} from 'react';
+import {Suspense, useEffect, useState} from 'react';
 import {Await, NavLink, useAsyncValue, useLocation} from 'react-router';
 import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
 import {useWishlist} from '~/components/WishlistProvider';
+
+const SEARCH_PLACEHOLDERS = [
+  'Search T-shirts',
+  'Search Graphics',
+  'Search Polos',
+  'Search Essentials',
+  'Search Offers',
+];
 
 /**
  * @param {HeaderProps}
@@ -306,6 +314,18 @@ export function CountrySelector({localization, placement = 'header'}) {
 }
 
 function DesktopSearchForm() {
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setPlaceholderIndex((current) => (current + 1) % SEARCH_PLACEHOLDERS.length);
+    }, 2200);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <form className="header-search-form" action="/search" method="get" role="search">
       <label className="sr-only" htmlFor="header-search">
@@ -315,7 +335,24 @@ function DesktopSearchForm() {
         <circle cx="11" cy="11" r="7" />
         <path d="M16.5 16.5L21 21" strokeLinecap="round" />
       </svg>
-      <input id="header-search" name="q" type="search" placeholder="Search T-shirts" autoComplete="off" />
+      <span
+        key={placeholderIndex}
+        className={`header-search-form__hint ${isFocused || searchTerm ? 'is-hidden' : ''}`}
+        aria-hidden="true"
+      >
+        {SEARCH_PLACEHOLDERS[placeholderIndex]}
+      </span>
+      <input
+        id="header-search"
+        name="q"
+        type="search"
+        value={searchTerm}
+        onChange={(event) => setSearchTerm(event.currentTarget.value)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        placeholder=""
+        autoComplete="off"
+      />
       <button type="submit">Search</button>
     </form>
   );

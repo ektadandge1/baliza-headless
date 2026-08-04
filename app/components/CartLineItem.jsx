@@ -3,14 +3,7 @@ import {useVariantUrl} from '~/lib/variants';
 import {Link} from 'react-router';
 import {ProductPrice} from './ProductPrice';
 import {useAside} from './Aside';
-
-const COLOR_MAP = {
-  white: '#f6f2ea', black: '#111111', navy: '#192b4d', blue: '#2f65b8',
-  grey: '#8f8f8f', gray: '#8f8f8f', red: '#b92d2d', green: '#2d6b4f',
-  olive: '#6f7351', beige: '#cbb891', cream: '#efe3c8', brown: '#6f4935',
-  coffee: '#4a3428', pink: '#e8a0bf', yellow: '#f5d76e', orange: '#e67e22',
-  purple: '#7d3c98',
-};
+import {getSwatchColor} from '~/lib/colorSwatches';
 
 function isColorOption(name) {
   return /colou?r/i.test(name);
@@ -27,12 +20,6 @@ function formatVariantValue(value) {
     .replace(/\s+/g, ' ')
     .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function getSwatchColor(value) {
-  const norm = String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const match = Object.entries(COLOR_MAP).find(([key]) => norm.includes(key));
-  return match?.[1] ?? '#d7d2c8';
 }
 
 /**
@@ -102,7 +89,11 @@ export function CartLineItem({layout, line, childrenMap}) {
                         aria-hidden="true"
                       />
                     )}
-                    <span>{isSize ? String(option.value).toUpperCase() : formatVariantValue(option.value)}</span>
+                    <span>
+                      {isSize
+                        ? String(option.value).toUpperCase()
+                        : formatVariantValue(option.value)}
+                    </span>
                   </span>
                 </li>
               );
@@ -113,7 +104,10 @@ export function CartLineItem({layout, line, childrenMap}) {
           </div>
           <div className="cart-line-actions">
             <CartLineQuantity line={line} />
-            <CartLineRemoveButton lineIds={[id]} disabled={!!line?.isOptimistic} />
+            <CartLineRemoveButton
+              lineIds={[id]}
+              disabled={!!line?.isOptimistic}
+            />
           </div>
         </div>
       </div>
@@ -218,11 +212,7 @@ function CartLineRemoveButton({lineIds, disabled}) {
       action={CartForm.ACTIONS.LinesRemove}
       inputs={{lineIds}}
     >
-      <button
-        className="cart-remove-btn"
-        disabled={disabled}
-        type="submit"
-      >
+      <button className="cart-remove-btn" disabled={disabled} type="submit">
         Remove
       </button>
     </CartForm>

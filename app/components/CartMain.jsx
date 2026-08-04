@@ -4,6 +4,7 @@ import {useAside} from '~/components/Aside';
 import {CartLineItem} from '~/components/CartLineItem';
 import {CartSummary} from './CartSummary';
 import {CartRecommendations} from '~/components/CartRecommendations';
+import {CartPromotionProgress} from '~/components/CartPromotionProgress';
 /**
  * Returns a map of all line items and their children.
  * @param {CartLine[]} lines
@@ -61,6 +62,9 @@ export function CartMain({layout, cart: originalCart}) {
             <h2>Your selection</h2>
           </div>
         )}
+        {cartHasItems ? (
+          <CartPromotionProgress cart={cart} />
+        ) : null}
         <div>
           <ul className="cart-items" aria-labelledby="cart-lines">
             {(cart?.lines?.nodes ?? []).map((line) => {
