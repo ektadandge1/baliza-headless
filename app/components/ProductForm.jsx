@@ -7,9 +7,14 @@ import {useAside} from './Aside';
  * @param {{
  *   productOptions: MappedProductOptions[];
  *   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
+ *   onVariantChange: (variant: ProductFragment['selectedOrFirstAvailableVariant']) => void;
  * }}
  */
-export function ProductForm({productOptions, selectedVariant}) {
+export function ProductForm({
+  productOptions,
+  selectedVariant,
+  onVariantChange,
+}) {
   const {open} = useAside();
   const [quantity, setQuantity] = useState(1);
   return (
@@ -54,6 +59,7 @@ export function ProductForm({productOptions, selectedVariant}) {
                   exists,
                   isDifferentProduct,
                   swatch,
+                  variant,
                 } = value;
                 const isValueSelected = selected;
 
@@ -92,17 +98,15 @@ export function ProductForm({productOptions, selectedVariant}) {
                   }
 
                   return (
-                    <Link
+                    <button
+                      type="button"
                       className={optionClassName}
                       key={option.name + name}
-                      prefetch="intent"
-                      preventScrollReset
-                      replace
-                      to={`?${variantUriQuery}`}
-                      aria-current={isValueSelected ? 'true' : undefined}
+                      aria-pressed={isValueSelected}
+                      onClick={() => onVariantChange(variant)}
                     >
                       <ProductOptionSwatch swatch={swatch} name={name} />
-                    </Link>
+                    </button>
                   );
                 }
               })}

@@ -3,8 +3,6 @@ import {
   Await,
   Link,
   useLoaderData,
-  useLocation,
-  useNavigation,
 } from 'react-router';
 import {
   getSelectedProductOptions,
@@ -145,15 +143,17 @@ export default function Product() {
     judgeMeWidgetEnabled,
   } = useLoaderData();
 
-  const location = useLocation();
-  const navigation = useNavigation();
-  const activeVariantSearch =
-    navigation.state === 'loading' && navigation.location
-      ? navigation.location.search
-      : location.search;
+  const variants = product.variants?.nodes ?? [];
+  const [selectedVariantId, setSelectedVariantId] = useState(
+    product.selectedOrFirstAvailableVariant?.id,
+  );
   const selectedVariant =
-    findVariantFromSearch(product.variants?.nodes ?? [], activeVariantSearch) ??
+    variants.find((variant) => variant.id === selectedVariantId) ??
     product.selectedOrFirstAvailableVariant;
+
+  useEffect(() => {
+    setSelectedVariantId(product.selectedOrFirstAvailableVariant?.id);
+  }, [product.id, product.selectedOrFirstAvailableVariant?.id]);
 
   // Sets the search param to the selected variant without navigation
   // only when no search params are set in the url
@@ -230,6 +230,7 @@ export default function Product() {
           <ProductForm
             productOptions={productOptions}
             selectedVariant={selectedVariant}
+            onVariantChange={(variant) => setSelectedVariantId(variant?.id)}
           />
 
           <details className="product-detail-drawer">
@@ -564,21 +565,6 @@ function saveRecentlyViewedProduct(product) {
   } catch {
     // Storage can be unavailable in private browsing; discovery still works.
   }
-}
-
-function findVariantFromSearch(variants, search) {
-  const searchParams = new URLSearchParams(search);
-  if (!searchParams.size) return undefined;
-
-  return variants.find((variant) =>
-    variant.selectedOptions?.every((option) => {
-      const selectedValue = searchParams.get(option.name);
-      return (
-        selectedValue != null &&
-        selectedValue.toLowerCase() === option.value.toLowerCase()
-      );
-    }),
-  );
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
