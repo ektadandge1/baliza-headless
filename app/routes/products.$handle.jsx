@@ -1,11 +1,15 @@
 import {Suspense, useEffect, useMemo, useState} from 'react';
-import {Await, Link, useLoaderData} from 'react-router';
+import {
+  Await,
+  Link,
+  useLoaderData,
+  useLocation,
+  useNavigation,
+} from 'react-router';
 import {
   getSelectedProductOptions,
   Analytics,
-  useOptimisticVariant,
   getProductOptions,
-  getAdjacentAndFirstAvailableVariants,
   useSelectedOptionInUrlParam,
 } from '@shopify/hydrogen';
 import {ProductPrice} from '~/components/ProductPrice';
@@ -141,11 +145,15 @@ export default function Product() {
     judgeMeWidgetEnabled,
   } = useLoaderData();
 
-  // Optimistically selects a variant with given available variant information
-  const selectedVariant = useOptimisticVariant(
-    product.selectedOrFirstAvailableVariant,
-    getAdjacentAndFirstAvailableVariants(product),
-  );
+  const location = useLocation();
+  const navigation = useNavigation();
+  const activeVariantSearch =
+    navigation.state === 'loading' && navigation.location
+      ? navigation.location.search
+      : location.search;
+  const selectedVariant =
+    findVariantFromSearch(product.variants?.nodes ?? [], activeVariantSearch) ??
+    product.selectedOrFirstAvailableVariant;
 
   // Sets the search param to the selected variant without navigation
   // only when no search params are set in the url
@@ -155,6 +163,7 @@ export default function Product() {
   const productOptions = getProductOptions({
     ...product,
     selectedOrFirstAvailableVariant: selectedVariant,
+    adjacentVariants: product.variants?.nodes ?? [],
   });
 
   const {title, descriptionHtml, vendor} = product;
@@ -557,6 +566,21 @@ function saveRecentlyViewedProduct(product) {
   }
 }
 
+function findVariantFromSearch(variants, search) {
+  const searchParams = new URLSearchParams(search);
+  if (!searchParams.size) return undefined;
+
+  return variants.find((variant) =>
+    variant.selectedOptions?.every((option) => {
+      const selectedValue = searchParams.get(option.name);
+      return (
+        selectedValue != null &&
+        selectedValue.toLowerCase() === option.value.toLowerCase()
+      );
+    }),
+  );
+}
+
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
   fragment ProductVariant on ProductVariant {
     availableForSale
@@ -619,23 +643,9 @@ const PRODUCT_FRAGMENT = `#graphql
         currencyCode
       }
     }
-    variants(first: 20) {
+    variants(first: 250) {
       nodes {
-        id
-        title
-        availableForSale
-        selectedOptions {
-          name
-          value
-        }
-        price {
-          amount
-          currencyCode
-        }
-        compareAtPrice {
-          amount
-          currencyCode
-        }
+        ...ProductVariant
       }
     }
     descriptionHtml

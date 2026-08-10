@@ -1,4 +1,4 @@
-import {Link, useLocation} from 'react-router';
+import {Link} from 'react-router';
 import {useState} from 'react';
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
@@ -11,9 +11,7 @@ import {useAside} from './Aside';
  */
 export function ProductForm({productOptions, selectedVariant}) {
   const {open} = useAside();
-  const location = useLocation();
   const [quantity, setQuantity] = useState(1);
-  const searchParams = new URLSearchParams(location.search);
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -57,10 +55,7 @@ export function ProductForm({productOptions, selectedVariant}) {
                   isDifferentProduct,
                   swatch,
                 } = value;
-                const selectedFromUrl = searchParams.get(option.name);
-                const isValueSelected = selectedFromUrl
-                  ? selectedFromUrl === name
-                  : selected;
+                const isValueSelected = selected;
 
                 if (isDifferentProduct) {
                   // SEO
