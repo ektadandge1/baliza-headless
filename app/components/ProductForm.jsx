@@ -75,27 +75,33 @@ export function ProductForm({productOptions, selectedVariant}) {
                     </Link>
                   );
                 } else {
-                  // SEO
-                  // When the variant is an update to the search param,
-                  // render it as a button with javascript navigating to
-                  // the variant so that SEO bots do not index these as
-                  // duplicated links
+                  const optionClassName = `product-options-item${exists && !selected ? ' link' : ''}${selected ? ' is-selected' : ''}${!available ? ' is-unavailable' : ''}`;
+
+                  if (!available) {
+                    return (
+                      <button
+                        type="button"
+                        className={optionClassName}
+                        key={option.name + name}
+                        disabled
+                      >
+                        <ProductOptionSwatch swatch={swatch} name={name} />
+                      </button>
+                    );
+                  }
+
                   return (
-                    <button
-                      type="button"
-                      className={`product-options-item${exists && !selected ? ' link' : ''}${selected ? ' is-selected' : ''}${!available ? ' is-unavailable' : ''}`}
+                    <Link
+                      className={optionClassName}
                       key={option.name + name}
-                      disabled={!available}
-                      onClick={() => {
-                        if (!selected) {
-                          window.location.assign(
-                            `${window.location.pathname}?${variantUriQuery}`,
-                          );
-                        }
-                      }}
+                      prefetch="intent"
+                      preventScrollReset
+                      replace
+                      to={`?${variantUriQuery}`}
+                      aria-current={selected ? 'true' : undefined}
                     >
                       <ProductOptionSwatch swatch={swatch} name={name} />
-                    </button>
+                    </Link>
                   );
                 }
               })}
