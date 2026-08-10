@@ -230,6 +230,7 @@ export default function Product() {
           <ProductForm
             productOptions={productOptions}
             selectedVariant={selectedVariant}
+            variants={variants}
             onVariantChange={(variant) => setSelectedVariantId(variant?.id)}
           />
 

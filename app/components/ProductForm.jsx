@@ -7,12 +7,14 @@ import {useAside} from './Aside';
  * @param {{
  *   productOptions: MappedProductOptions[];
  *   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
+ *   variants: ProductFragment['variants']['nodes'];
  *   onVariantChange: (variant: ProductFragment['selectedOrFirstAvailableVariant']) => void;
  * }}
  */
 export function ProductForm({
   productOptions,
   selectedVariant,
+  variants,
   onVariantChange,
 }) {
   const {open} = useAside();
@@ -46,7 +48,7 @@ export function ProductForm({
           >
             <div className="product-form__option-head">
               <h5>{option.name}</h5>
-              <span>{getSelectedOptionName(option)}</span>
+              <span>{getSelectedOptionName(option, selectedVariant)}</span>
             </div>
             <div className="product-options-grid">
               {option.optionValues.map((value) => {
@@ -54,14 +56,17 @@ export function ProductForm({
                   name,
                   handle,
                   variantUriQuery,
-                  selected,
                   available,
                   exists,
                   isDifferentProduct,
                   swatch,
                   variant,
                 } = value;
-                const isValueSelected = selected;
+                const isValueSelected = isSelectedOption(
+                  selectedVariant,
+                  option.name,
+                  name,
+                );
 
                 if (isDifferentProduct) {
                   // SEO
@@ -82,9 +87,19 @@ export function ProductForm({
                     </Link>
                   );
                 } else {
-                  const optionClassName = `product-options-item${exists && !isValueSelected ? ' link' : ''}${isValueSelected ? ' is-selected' : ''}${!available ? ' is-unavailable' : ''}`;
+                  const targetVariant =
+                    findVariantForOption(
+                      variants,
+                      selectedVariant,
+                      option.name,
+                      name,
+                    ) ?? variant;
+                  const isAvailable = Boolean(
+                    targetVariant?.availableForSale ?? available,
+                  );
+                  const optionClassName = `product-options-item${exists && !isValueSelected ? ' link' : ''}${isValueSelected ? ' is-selected' : ''}${!isAvailable ? ' is-unavailable' : ''}`;
 
-                  if (!available) {
+                  if (!targetVariant || !isAvailable) {
                     return (
                       <button
                         type="button"
@@ -103,7 +118,7 @@ export function ProductForm({
                       className={optionClassName}
                       key={option.name + name}
                       aria-pressed={isValueSelected}
-                      onClick={() => onVariantChange(variant)}
+                      onClick={() => onVariantChange(targetVariant)}
                     >
                       <ProductOptionSwatch swatch={swatch} name={name} />
                     </button>
@@ -180,8 +195,43 @@ function haveSameOptionValues(firstOption, secondOption) {
   );
 }
 
-function getSelectedOptionName(option) {
-  return option.optionValues.find((value) => value.selected)?.name ?? '';
+function getSelectedOptionName(option, selectedVariant) {
+  return (
+    selectedVariant?.selectedOptions?.find(
+      (selectedOption) =>
+        selectedOption.name.toLowerCase() === option.name.toLowerCase(),
+    )?.value ?? ''
+  );
+}
+
+function isSelectedOption(selectedVariant, optionName, optionValue) {
+  return selectedVariant?.selectedOptions?.some(
+    (option) =>
+      option.name.toLowerCase() === optionName.toLowerCase() &&
+      option.value.toLowerCase() === optionValue.toLowerCase(),
+  );
+}
+
+function findVariantForOption(
+  variants,
+  selectedVariant,
+  optionName,
+  optionValue,
+) {
+  const selectedOptions = Object.fromEntries(
+    selectedVariant?.selectedOptions?.map((option) => [
+      option.name.toLowerCase(),
+      option.value.toLowerCase(),
+    ]) ?? [],
+  );
+  selectedOptions[optionName.toLowerCase()] = optionValue.toLowerCase();
+
+  return variants.find((variant) =>
+    variant.selectedOptions?.every(
+      (option) =>
+        selectedOptions[option.name.toLowerCase()] === option.value.toLowerCase(),
+    ),
+  );
 }
 
 /**
