@@ -166,7 +166,7 @@ export default function Product() {
     adjacentVariants: product.variants?.nodes ?? [],
   });
 
-  const {title, descriptionHtml, vendor} = product;
+  const {title, descriptionHtml} = product;
   const currentProductCard = useMemo(
     () => getProductCardData(product),
     [product],
@@ -182,11 +182,6 @@ export default function Product() {
           selectedImage={selectedVariant?.image}
         />
         <section className="product-main" aria-label="Product information">
-          <div className="product-main__eyebrow">
-            <span className="product-main__badge">Product details</span>
-            {vendor ? <span className="product-vendor">{vendor}</span> : null}
-          </div>
-
           <h1>{title}</h1>
 
           <div className="product-main__meta">

@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Image} from '@shopify/hydrogen';
 
 /**
@@ -14,10 +14,17 @@ export function ProductGallery({images = [], selectedImage}) {
   const initialImage = selectedImage || galleryImages[0];
   const [activeId, setActiveId] = useState(initialImage?.id);
   const [touchStart, setTouchStart] = useState(null);
+  const thumbsRef = useRef(null);
 
   useEffect(() => {
     if (selectedImage?.id) setActiveId(selectedImage.id);
   }, [selectedImage?.id]);
+
+  useEffect(() => {
+    thumbsRef.current
+      ?.querySelector('.product-gallery__thumb.is-active')
+      ?.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
+  }, [activeId]);
 
   const activeImage =
     galleryImages.find((image) => image.id === activeId) || selectedImage || galleryImages[0];
@@ -72,7 +79,12 @@ export function ProductGallery({images = [], selectedImage}) {
           >
             ‹
           </button>
-          <div className="product-gallery__thumbs" role="list" aria-label="Product images">
+          <div
+            className="product-gallery__thumbs"
+            role="list"
+            aria-label="Product images"
+            ref={thumbsRef}
+          >
             {galleryImages.map((image, index) => (
               <button
                 type="button"
