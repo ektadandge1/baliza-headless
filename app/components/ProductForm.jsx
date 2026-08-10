@@ -1,4 +1,4 @@
-import {Link} from 'react-router';
+import {Link, useLocation} from 'react-router';
 import {useState} from 'react';
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
@@ -11,7 +11,9 @@ import {useAside} from './Aside';
  */
 export function ProductForm({productOptions, selectedVariant}) {
   const {open} = useAside();
+  const location = useLocation();
   const [quantity, setQuantity] = useState(1);
+  const searchParams = new URLSearchParams(location.search);
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -55,6 +57,10 @@ export function ProductForm({productOptions, selectedVariant}) {
                   isDifferentProduct,
                   swatch,
                 } = value;
+                const selectedFromUrl = searchParams.get(option.name);
+                const isValueSelected = selectedFromUrl
+                  ? selectedFromUrl === name
+                  : selected;
 
                 if (isDifferentProduct) {
                   // SEO
@@ -63,19 +69,19 @@ export function ProductForm({productOptions, selectedVariant}) {
                   // as an anchor tag
                   return (
                     <Link
-                      className={`product-options-item${selected ? ' is-selected' : ''}${!available ? ' is-unavailable' : ''}`}
+                      className={`product-options-item${isValueSelected ? ' is-selected' : ''}${!available ? ' is-unavailable' : ''}`}
                       key={option.name + name}
                       prefetch="intent"
                       preventScrollReset
                       replace
                       to={`/products/${handle}?${variantUriQuery}`}
-                      aria-current={selected ? 'true' : undefined}
+                      aria-current={isValueSelected ? 'true' : undefined}
                     >
                       <ProductOptionSwatch swatch={swatch} name={name} />
                     </Link>
                   );
                 } else {
-                  const optionClassName = `product-options-item${exists && !selected ? ' link' : ''}${selected ? ' is-selected' : ''}${!available ? ' is-unavailable' : ''}`;
+                  const optionClassName = `product-options-item${exists && !isValueSelected ? ' link' : ''}${isValueSelected ? ' is-selected' : ''}${!available ? ' is-unavailable' : ''}`;
 
                   if (!available) {
                     return (
@@ -98,7 +104,7 @@ export function ProductForm({productOptions, selectedVariant}) {
                       preventScrollReset
                       replace
                       to={`?${variantUriQuery}`}
-                      aria-current={selected ? 'true' : undefined}
+                      aria-current={isValueSelected ? 'true' : undefined}
                     >
                       <ProductOptionSwatch swatch={swatch} name={name} />
                     </Link>
