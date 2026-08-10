@@ -1,4 +1,5 @@
-import {Link, useNavigate} from 'react-router';
+import {Link} from 'react-router';
+import {useState} from 'react';
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
 
@@ -9,8 +10,8 @@ import {useAside} from './Aside';
  * }}
  */
 export function ProductForm({productOptions, selectedVariant}) {
-  const navigate = useNavigate();
   const {open} = useAside();
+  const [quantity, setQuantity] = useState(1);
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -84,13 +85,12 @@ export function ProductForm({productOptions, selectedVariant}) {
                       type="button"
                       className={`product-options-item${exists && !selected ? ' link' : ''}${selected ? ' is-selected' : ''}${!available ? ' is-unavailable' : ''}`}
                       key={option.name + name}
-                      disabled={!exists}
+                      disabled={!available}
                       onClick={() => {
                         if (!selected) {
-                          void navigate(`?${variantUriQuery}`, {
-                            replace: true,
-                            preventScrollReset: true,
-                          });
+                          window.location.assign(
+                            `${window.location.pathname}?${variantUriQuery}`,
+                          );
                         }
                       }}
                     >
@@ -108,6 +108,27 @@ export function ProductForm({productOptions, selectedVariant}) {
         <strong>Buy 2 save 10%, buy 3 save 15%, buy 5 save 20%.</strong>
         <small>Discount applies automatically in your cart.</small>
       </div>
+      <div className="product-form__quantity" aria-label="Quantity">
+        <span className="product-form__quantity-label">Quantity</span>
+        <div className="product-form__quantity-control">
+          <button
+            type="button"
+            aria-label="Decrease quantity"
+            disabled={quantity <= 1}
+            onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+          >
+            &minus;
+          </button>
+          <span aria-live="polite">{quantity}</span>
+          <button
+            type="button"
+            aria-label="Increase quantity"
+            onClick={() => setQuantity((value) => Math.min(99, value + 1))}
+          >
+            +
+          </button>
+        </div>
+      </div>
       <div className="product-form__actions">
         <AddToCartButton
           className="product-form__submit"
@@ -120,7 +141,7 @@ export function ProductForm({productOptions, selectedVariant}) {
               ? [
                   {
                     merchandiseId: selectedVariant.id,
-                    quantity: 1,
+                    quantity,
                     selectedVariant,
                   },
                 ]

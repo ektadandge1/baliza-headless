@@ -6,6 +6,7 @@ import {
   useSearchParams,
 } from 'react-router';
 import {useEffect, useRef, useState} from 'react';
+import {BRAND_LOGO_URL} from '~/lib/brand';
 
 /**
  * @type {Route.MetaFunction}
@@ -151,8 +152,7 @@ function AuthShell({children}) {
         <div className="auth-shell__bg" aria-hidden="true" />
         <div className="auth-shell__aside" aria-hidden="true" />
         <a className="auth-shell__brand" href="/" aria-label="Baliza home">
-          <span className="auth-shell__brand-mark">B</span>
-          <span>BALIZA</span>
+          <img src={BRAND_LOGO_URL} alt="Baliza" />
         </a>
         {children}
       </div>

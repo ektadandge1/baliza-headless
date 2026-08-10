@@ -64,7 +64,7 @@ function getSelectedCountry(session) {
     return country;
   }
 
-  return 'US';
+  return 'IN';
 }
 
 /** @typedef {Class<additionalContext>} AdditionalContextType */

@@ -1,5 +1,6 @@
 import {NavLink} from 'react-router';
 import {CountrySelector} from '~/components/Header';
+import {BRAND_LOGO_URL} from '~/lib/brand';
 
 /**
  * @param {FooterProps}
@@ -10,7 +11,7 @@ export function Footer({header, localization}) {
       <div className="footer-top">
         <div className="footer-brand">
           <NavLink to="/" className="footer-brand-name">
-            {header.shop.name}
+            <img src={BRAND_LOGO_URL} alt={header.shop.name} />
           </NavLink>
           <p className="footer-brand-desc">
             Premium clothing designed for those who appreciate quality, comfort,

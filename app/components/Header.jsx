@@ -3,6 +3,7 @@ import {Await, NavLink, useAsyncValue, useLocation} from 'react-router';
 import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
 import {useWishlist} from '~/components/WishlistProvider';
+import {BRAND_LOGO_URL} from '~/lib/brand';
 
 const SEARCH_PLACEHOLDERS = [
   'Search T-shirts',
@@ -15,7 +16,7 @@ const SEARCH_PLACEHOLDERS = [
 /**
  * @param {HeaderProps}
  */
-export function Header({header, cart, isLoggedIn, localization, publicStoreDomain}) {
+export function Header({header, cart, isLoggedIn, publicStoreDomain}) {
   const {shop} = header;
 
   return (
@@ -34,15 +35,17 @@ export function Header({header, cart, isLoggedIn, localization, publicStoreDomai
 
           <div className="header-logo">
             <NavLink prefetch="intent" to="/" end aria-label={`${shop.name} home`}>
-              <span className="logo-mark">B</span>
-              <span className="logo-text">{shop.name}</span>
+              <img
+                className="logo-image"
+                src={BRAND_LOGO_URL}
+                alt={shop.name}
+              />
             </NavLink>
           </div>
 
           <HeaderActions
             cart={cart}
             isLoggedIn={isLoggedIn}
-            localization={localization}
           />
         </header>
 
@@ -240,7 +243,7 @@ function MobileNav({isLoggedIn, localization}) {
 /**
  * @param {Pick<HeaderProps, 'isLoggedIn' | 'cart'>}
  */
-function HeaderActions({cart, isLoggedIn, localization}) {
+function HeaderActions({cart, isLoggedIn}) {
   return (
     <Suspense fallback={<HeaderActionsContent cart={cart} isLoggedIn={false} />}>
       <Await resolve={isLoggedIn}>
@@ -248,7 +251,6 @@ function HeaderActions({cart, isLoggedIn, localization}) {
           <HeaderActionsContent
             cart={cart}
             isLoggedIn={loggedIn}
-            localization={localization}
           />
         )}
       </Await>
@@ -256,11 +258,10 @@ function HeaderActions({cart, isLoggedIn, localization}) {
   );
 }
 
-function HeaderActionsContent({cart, isLoggedIn, localization}) {
+function HeaderActionsContent({cart, isLoggedIn}) {
   return (
     <nav className="header-actions" aria-label="Header actions">
       <DesktopSearchForm />
-      <CountrySelector localization={localization} placement="header" />
       {isLoggedIn ? (
         <NavLink prefetch="intent" to="/account" className="header-action-link header-action-link--account" aria-label="Account">
           <AccountIcon />

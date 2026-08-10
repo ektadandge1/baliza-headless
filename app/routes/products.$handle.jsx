@@ -157,8 +157,7 @@ export default function Product() {
     selectedOrFirstAvailableVariant: selectedVariant,
   });
 
-  const {title, description, descriptionHtml, vendor} = product;
-  const productSummary = getProductSummary(description);
+  const {title, descriptionHtml, vendor} = product;
   const currentProductCard = useMemo(
     () => getProductCardData(product),
     [product],
@@ -186,11 +185,6 @@ export default function Product() {
               productId={product.id}
               reviews={judgeMeReviews}
             />
-            {selectedVariant?.sku ? (
-              <small className="product-main__sku">
-                SKU {selectedVariant.sku}
-              </small>
-            ) : null}
             {selectedVariant ? (
               <small
                 className={`product-main__stock ${
@@ -203,10 +197,6 @@ export default function Product() {
               </small>
             ) : null}
           </div>
-
-          {productSummary ? (
-            <p className="product-main__summary">{productSummary}</p>
-          ) : null}
 
           <div className="product-main__price-row">
             <ProductPrice
@@ -233,16 +223,7 @@ export default function Product() {
             selectedVariant={selectedVariant}
           />
 
-          <div
-            className="product-assurance-grid"
-            aria-label="Shopping benefits"
-          >
-            <span>Secure checkout</span>
-            <span>Easy exchange</span>
-            <span>Quality checked</span>
-          </div>
-
-          <details className="product-detail-drawer" open>
+          <details className="product-detail-drawer">
             <summary>Description</summary>
             <div
               className="product-description-prose"
@@ -574,15 +555,6 @@ function saveRecentlyViewedProduct(product) {
   } catch {
     // Storage can be unavailable in private browsing; discovery still works.
   }
-}
-
-function getProductSummary(description) {
-  if (!description) return '';
-
-  const text = description.replace(/\s+/g, ' ').trim();
-  if (text.length <= 165) return text;
-
-  return `${text.slice(0, 162).trimEnd()}...`;
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql

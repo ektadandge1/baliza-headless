@@ -68,9 +68,16 @@ function CartCheckoutActions({checkoutUrl}) {
 
   return (
     <div className="cart-checkout-wrap">
-      <a className="cart-checkout-btn" href={checkoutUrl} target="_self">
-        Continue to checkout <span aria-hidden="true">&rarr;</span>
-      </a>
+      <CartForm
+        route="/cart"
+        action={CartForm.ACTIONS.BuyerIdentityUpdate}
+        inputs={{buyerIdentity: {countryCode: 'IN'}}}
+      >
+        <input type="hidden" name="redirectTo" value={checkoutUrl} />
+        <button className="cart-checkout-btn" type="submit">
+          Continue to checkout <span aria-hidden="true">&rarr;</span>
+        </button>
+      </CartForm>
       <p className="cart-checkout-caption">Taxes and shipping calculated at checkout</p>
     </div>
   );

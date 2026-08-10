@@ -5,6 +5,7 @@ import {
   useNavigate,
 } from 'react-router';
 import {useEffect, useState} from 'react';
+import {BRAND_LOGO_URL} from '~/lib/brand';
 
 /**
  * @type {Route.MetaFunction}
@@ -140,8 +141,7 @@ function AuthShell({children}) {
           <span className="auth-shell__aside-index">03 / 03</span>
         </div>
         <a className="auth-shell__brand" href="/" aria-label="Baliza home">
-          <span className="auth-shell__brand-mark">B</span>
-          <span>BALIZA</span>
+          <img src={BRAND_LOGO_URL} alt="Baliza" />
         </a>
         {children}
       </div>

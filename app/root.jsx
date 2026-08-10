@@ -9,7 +9,6 @@ import {
   ScrollRestoration,
   useRouteLoaderData,
 } from 'react-router';
-import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY, LOCALIZATION_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
@@ -19,6 +18,7 @@ import {JudgeMeScript} from './components/JudgeMe';
 import {MarketingPopup} from './components/MarketingPopup';
 import {ScrollNotice} from './components/ScrollNotice';
 import {WishlistProvider} from './components/WishlistProvider';
+import {BRAND_LOGO_URL} from '~/lib/brand';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -72,7 +72,11 @@ export function links() {
       rel: 'stylesheet',
       href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap',
     },
-    {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    {
+      rel: 'icon',
+      type: 'image/png',
+      href: BRAND_LOGO_URL,
+    },
   ];
 }
 
