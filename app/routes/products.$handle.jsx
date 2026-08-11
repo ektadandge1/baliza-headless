@@ -220,14 +220,14 @@ export default function Product() {
             />
           </div>
 
-          <DeliveryEstimator price={selectedVariant?.price} />
-
           <ProductForm
             productOptions={productOptions}
             selectedVariant={selectedVariant}
             variants={variants}
             onVariantChange={(variant) => setSelectedVariantId(variant?.id)}
           />
+
+          <DeliveryEstimator price={selectedVariant?.price} />
 
           <details className="product-detail-drawer">
             <summary>Description</summary>

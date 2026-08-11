@@ -21,6 +21,27 @@ export function ProductForm({
   const [quantity, setQuantity] = useState(1);
   return (
     <div className="product-form">
+      <div className="product-form__quantity" aria-label="Quantity">
+        <span className="product-form__quantity-label">Quantity</span>
+        <div className="product-form__quantity-control">
+          <button
+            type="button"
+            aria-label="Decrease quantity"
+            disabled={quantity <= 1}
+            onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+          >
+            &minus;
+          </button>
+          <span aria-live="polite">{quantity}</span>
+          <button
+            type="button"
+            aria-label="Increase quantity"
+            onClick={() => setQuantity((value) => Math.min(99, value + 1))}
+          >
+            +
+          </button>
+        </div>
+      </div>
       {productOptions.map((option) => {
         // If there is only a single value in the option values, don't display the option
         if (option.optionValues.length === 1) return null;
@@ -134,34 +155,11 @@ export function ProductForm({
         <strong>Buy 2 save 10%, buy 3 save 15%, buy 5 save 20%.</strong>
         <small>Discount applies automatically in your cart.</small>
       </div>
-      <div className="product-form__quantity" aria-label="Quantity">
-        <span className="product-form__quantity-label">Quantity</span>
-        <div className="product-form__quantity-control">
-          <button
-            type="button"
-            aria-label="Decrease quantity"
-            disabled={quantity <= 1}
-            onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-          >
-            &minus;
-          </button>
-          <span aria-live="polite">{quantity}</span>
-          <button
-            type="button"
-            aria-label="Increase quantity"
-            onClick={() => setQuantity((value) => Math.min(99, value + 1))}
-          >
-            +
-          </button>
-        </div>
-      </div>
       <div className="product-form__actions">
         <AddToCartButton
           className="product-form__submit"
           disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={() => {
-            open('cart');
-          }}
+          onAdded={() => open('cart')}
           lines={
             selectedVariant
               ? [

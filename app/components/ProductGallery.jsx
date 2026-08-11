@@ -56,7 +56,6 @@ export function ProductGallery({images = [], selectedImage}) {
       >
         <Image
           alt={activeImage.altText || 'Product image'}
-          aspectRatio="1/1"
           data={activeImage}
           key={activeImage.id}
           sizes="(min-width: 45em) 50vw, 100vw"
