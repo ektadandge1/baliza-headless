@@ -1,10 +1,11 @@
 import {Await, Link} from 'react-router';
-import {Suspense, useId} from 'react';
+import {Suspense, useEffect, useId, useState} from 'react';
 import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
 import {WishlistDrawer} from '~/components/WishlistDrawer';
+import {CART_UPDATED_EVENT} from '~/lib/cartEvents';
 import {
   SEARCH_ENDPOINT,
   SearchFormPredictive,
@@ -23,9 +24,21 @@ export function PageLayout({
   localization,
   publicStoreDomain,
 }) {
+  const [cartOverride, setCartOverride] = useState(null);
+  const currentCart = cartOverride ?? cart;
+
+  useEffect(() => {
+    function handleCartUpdated(event) {
+      if (event.detail) setCartOverride(event.detail);
+    }
+
+    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated);
+    return () => window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated);
+  }, []);
+
   return (
     <Aside.Provider>
-      <CartAside cart={cart} />
+      <CartAside cart={currentCart} />
       <SearchAside />
       <WishlistAside />
       <MobileMenuAside
@@ -37,7 +50,7 @@ export function PageLayout({
       {header && (
         <Header
           header={header}
-          cart={cart}
+          cart={currentCart}
           isLoggedIn={isLoggedIn}
           localization={localization}
           publicStoreDomain={publicStoreDomain}

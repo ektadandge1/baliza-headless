@@ -1,6 +1,7 @@
 import {CartForm} from '@shopify/hydrogen';
 import {useEffect, useRef} from 'react';
 import {useRevalidator} from 'react-router';
+import {CART_UPDATED_EVENT} from '~/lib/cartEvents';
 
 /**
  * @param {{
@@ -65,6 +66,9 @@ function AddToCartSubmit({
     const errors = fetcher.data.errors;
     const hasErrors = Array.isArray(errors) ? errors.length > 0 : Boolean(errors);
     if (fetcher.data.cart && !hasErrors) {
+      window.dispatchEvent(
+        new CustomEvent(CART_UPDATED_EVENT, {detail: fetcher.data.cart}),
+      );
       // Fetcher actions do not always refresh the deferred root cart data.
       // Revalidate it after Shopify has committed the cart mutation.
       revalidator.revalidate();
