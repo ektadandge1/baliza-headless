@@ -91,7 +91,6 @@ function EnterpriseBannerSection() {
             width="1920"
             height="900"
             loading="eager"
-            fetchPriority="high"
             decoding="async"
           />
         </article>
@@ -103,7 +102,6 @@ function EnterpriseBannerSection() {
             width="1920"
             height="900"
             loading="lazy"
-            fetchPriority="low"
             decoding="async"
           />
         </article>
