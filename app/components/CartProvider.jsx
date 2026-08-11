@@ -8,7 +8,9 @@ export function CartProvider({children, initialCart}) {
 
   const setLiveCart = useCallback((nextCart) => {
     cartVersion.current += 1;
-    setCart(nextCart ?? null);
+    setCart((currentCart) =>
+      typeof nextCart === 'function' ? nextCart(currentCart) : nextCart ?? null,
+    );
   }, []);
 
   useEffect(() => {

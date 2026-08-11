@@ -23,14 +23,21 @@ export function AddToCartButton({
   onClick,
   onAdded,
 }) {
+  const actionLines = lines.map(getCartActionLine);
+
   return (
-    <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
+    <CartForm
+      route="/cart"
+      inputs={{lines: actionLines}}
+      action={CartForm.ACTIONS.LinesAdd}
+    >
       {(fetcher) => (
         <AddToCartSubmit
           analytics={analytics}
           className={className}
           disabled={disabled}
           fetcher={fetcher}
+          lines={lines}
           onAdded={onAdded}
           onClick={onClick}
         >
@@ -47,6 +54,7 @@ function AddToCartSubmit({
   className,
   disabled,
   fetcher,
+  lines,
   onAdded,
   onClick,
 }) {
@@ -85,7 +93,12 @@ function AddToCartSubmit({
       <button
         type="submit"
         className={className}
-        onClick={onClick}
+        onClick={(event) => {
+          if (!disabled && !pending) {
+            setCart((cart) => addOptimisticLines(cart, lines));
+          }
+          onClick?.(event);
+        }}
         disabled={Boolean(disabled) || pending}
         aria-busy={pending}
       >
@@ -93,6 +106,73 @@ function AddToCartSubmit({
       </button>
     </>
   );
+}
+
+function addOptimisticLines(cart, lines) {
+  const optimisticLines = lines.filter((line) => line.selectedVariant?.id);
+  if (!optimisticLines.length) return cart;
+
+  const nextCart = cart
+    ? structuredClone(cart)
+    : {lines: {nodes: []}, totalQuantity: 0};
+  const cartLines = nextCart.lines?.nodes ?? [];
+
+  nextCart.lines = nextCart.lines ?? {nodes: []};
+  nextCart.lines.nodes = cartLines;
+
+  for (const line of optimisticLines) {
+    const quantity = line.quantity || 1;
+    const variant = line.selectedVariant;
+    const existingLine = cartLines.find(
+      (cartLine) => cartLine.merchandise?.id === variant.id,
+    );
+
+    if (existingLine) {
+      existingLine.quantity = (existingLine.quantity || 0) + quantity;
+      existingLine.isOptimistic = true;
+      continue;
+    }
+
+    cartLines.unshift({
+      id: `optimistic-${variant.id}`,
+      quantity,
+      isOptimistic: true,
+      cost: getOptimisticLineCost(variant, quantity),
+      merchandise: variant,
+      attributes: [],
+    });
+  }
+
+  nextCart.totalQuantity = cartLines.reduce(
+    (total, cartLine) => total + (Number(cartLine.quantity) || 0),
+    0,
+  );
+
+  return nextCart;
+}
+
+function getOptimisticLineCost(variant, quantity) {
+  const price = variant.price;
+  if (!price?.amount || !price?.currencyCode) return undefined;
+
+  return {
+    totalAmount: {
+      amount: String(Number(price.amount) * quantity),
+      currencyCode: price.currencyCode,
+    },
+    amountPerQuantity: price,
+    compareAtAmountPerQuantity: variant.compareAtPrice,
+  };
+}
+
+function getCartActionLine(line) {
+  return {
+    attributes: line.attributes,
+    merchandiseId: line.merchandiseId,
+    parent: line.parent,
+    quantity: line.quantity,
+    sellingPlanId: line.sellingPlanId,
+  };
 }
 
 /** @typedef {import('react-router').FetcherWithComponents} FetcherWithComponents */
