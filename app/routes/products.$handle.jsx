@@ -172,8 +172,12 @@ export default function Product() {
     [product],
   );
 
+  useEffect(() => {
+    window.scrollTo({top: 0, left: 0, behavior: 'auto'});
+  }, [product.id]);
+
   return (
-    <div className="product-page">
+    <div className="product-page" key={product.id}>
       <div className="product product--premium">
         <ProductGallery
           images={product.media?.nodes
