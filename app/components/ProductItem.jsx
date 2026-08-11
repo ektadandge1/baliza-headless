@@ -1,4 +1,4 @@
-import {Link} from 'react-router';
+import {Link, useNavigate} from 'react-router';
 import {useState} from 'react';
 import {Image, Money} from '@shopify/hydrogen';
 import {AddToCartButton} from '~/components/AddToCartButton';
@@ -20,6 +20,7 @@ import {useVariantUrl} from '~/lib/variants';
  */
 export function ProductItem({product, loading, ratings, judgeMeBadge}) {
   const {open} = useAside();
+  const navigate = useNavigate();
   const variantUrl = useVariantUrl(product.handle);
   const image = product.featuredImage;
   const variants = product.variants?.nodes ?? [];
@@ -70,8 +71,27 @@ export function ProductItem({product, loading, ratings, judgeMeBadge}) {
     });
   };
 
+  const openProduct = (event) => {
+    if (event.defaultPrevented || isInteractiveClick(event.target)) return;
+    navigate(variantUrl);
+  };
+
+  const openProductFromKeyboard = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    if (isInteractiveClick(event.target)) return;
+    event.preventDefault();
+    navigate(variantUrl);
+  };
+
   return (
-    <article className="product-item">
+    <div
+      aria-label={product.title}
+      className="product-item"
+      onClick={openProduct}
+      onKeyDown={openProductFromKeyboard}
+      role="link"
+      tabIndex={0}
+    >
       <div className="product-item-image">
         <WishlistButton product={product} className="product-item__wishlist" />
         <Link
@@ -204,7 +224,7 @@ export function ProductItem({product, loading, ratings, judgeMeBadge}) {
           </div>
         )}
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -257,6 +277,13 @@ function isOptionValueAvailable(variants, selectedOptions, optionName, value) {
 
 function isColorOption(name) {
   return /colou?r/i.test(name);
+}
+
+function isInteractiveClick(target) {
+  return Boolean(
+    target instanceof Element &&
+      target.closest('a, button, input, select, textarea, label, [role="button"]'),
+  );
 }
 
 function getCartVariant(variant, product) {
