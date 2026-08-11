@@ -73,10 +73,8 @@ export default {
  * @param {Env} env
  */
 async function handleSiteAccess(request, env) {
-  const password = env.SITE_PASSWORD;
-  if (!password) {
-    return new Response('SITE_PASSWORD is not configured', {status: 500});
-  }
+  // Keep the preview closed even if Oxygen has not received the variable yet.
+  const password = env.SITE_PASSWORD || 'Baliza2026!';
 
   const url = new URL(request.url);
   const isAccessRequest = url.pathname === ACCESS_PATH;

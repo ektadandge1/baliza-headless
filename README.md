@@ -42,7 +42,7 @@ npm run dev
 
 ## Storefront password
 
-The server protects every storefront route with the `SITE_PASSWORD` environment variable. Set the same variable in the Oxygen deployment environment before publishing. The local password is defined in `.env` and should be changed before sharing access.
+The server protects every storefront route with the `SITE_PASSWORD` environment variable. Set it in the Oxygen deployment environment before publishing. Until then, the deployment fallback password is `Baliza2026!`; change it in `server.js` if you use a different production password.
 
 ## Setup for using Customer Account API (`/account` section)
 
