@@ -87,10 +87,14 @@ async function handleSiteAccess(request, env) {
     const formData = await request.formData();
     const submittedPassword = formData.get('password');
 
-    if (typeof submittedPassword === 'string' && submittedPassword === password) {
+    if (
+      typeof submittedPassword === 'string' &&
+      submittedPassword.trim() === password
+    ) {
       const next = getSafeNext(formData.get('next'));
+      const redirectUrl = new URL(next, url.origin);
       const headers = new Headers({
-        Location: next,
+        Location: redirectUrl.toString(),
         'Cache-Control': 'no-store',
         'Set-Cookie': `${ACCESS_COOKIE}=${await createAccessToken(password)}; Max-Age=${ACCESS_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax${url.protocol === 'https:' ? '; Secure' : ''}`,
       });
