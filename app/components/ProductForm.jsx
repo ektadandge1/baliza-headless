@@ -159,6 +159,7 @@ export function ProductForm({
         <AddToCartButton
           className="product-form__submit"
           disabled={!selectedVariant || !selectedVariant.availableForSale}
+          onClick={() => open('cart')}
           onAdded={() => open('cart')}
           lines={
             selectedVariant

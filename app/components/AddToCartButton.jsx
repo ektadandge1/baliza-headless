@@ -1,5 +1,6 @@
 import {CartForm} from '@shopify/hydrogen';
 import {useEffect, useRef} from 'react';
+import {useRevalidator} from 'react-router';
 
 /**
  * @param {{
@@ -50,6 +51,7 @@ function AddToCartSubmit({
 }) {
   const submitted = useRef(false);
   const pending = fetcher.state !== 'idle';
+  const revalidator = useRevalidator();
 
   useEffect(() => {
     if (pending) {
@@ -62,8 +64,13 @@ function AddToCartSubmit({
 
     const errors = fetcher.data.errors;
     const hasErrors = Array.isArray(errors) ? errors.length > 0 : Boolean(errors);
-    if (fetcher.data.cart && !hasErrors) onAdded?.();
-  }, [fetcher.data, onAdded, pending]);
+    if (fetcher.data.cart && !hasErrors) {
+      // Fetcher actions do not always refresh the deferred root cart data.
+      // Revalidate it after Shopify has committed the cart mutation.
+      revalidator.revalidate();
+      onAdded?.();
+    }
+  }, [fetcher.data, onAdded, pending, revalidator]);
 
   return (
     <>
