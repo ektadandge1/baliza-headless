@@ -1,5 +1,5 @@
 import {Suspense, useEffect, useState} from 'react';
-import {Await, NavLink, useAsyncValue, useLocation} from 'react-router';
+import {Await, NavLink, useLocation} from 'react-router';
 import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
 import {useWishlist} from '~/components/WishlistProvider';
@@ -457,18 +457,7 @@ function WishlistToggle() {
 /**
  * @param {Pick<HeaderProps, 'cart'>}
  */
-function CartToggle({cart}) {
-  return (
-    <Suspense fallback={<CartBadge count={0} />}>
-      <Await resolve={cart}>
-        <CartBanner />
-      </Await>
-    </Suspense>
-  );
-}
-
-function CartBanner() {
-  const originalCart = useAsyncValue();
+function CartToggle({cart: originalCart}) {
   const cart = useOptimisticCart(originalCart);
   return <CartBadge count={cart?.totalQuantity ?? 0} />;
 }

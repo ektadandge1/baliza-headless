@@ -1,11 +1,11 @@
 import {Await, Link} from 'react-router';
-import {Suspense, useEffect, useId, useState} from 'react';
+import {Suspense, useId} from 'react';
 import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
 import {WishlistDrawer} from '~/components/WishlistDrawer';
-import {CART_UPDATED_EVENT} from '~/lib/cartEvents';
+import {CartProvider, useLiveCart} from '~/components/CartProvider';
 import {
   SEARCH_ENDPOINT,
   SearchFormPredictive,
@@ -24,21 +24,34 @@ export function PageLayout({
   localization,
   publicStoreDomain,
 }) {
-  const [cartOverride, setCartOverride] = useState(null);
-  const currentCart = cartOverride ?? cart;
+  return (
+    <CartProvider initialCart={cart}>
+      <PageLayoutContent
+        footer={footer}
+        header={header}
+        isLoggedIn={isLoggedIn}
+        localization={localization}
+        publicStoreDomain={publicStoreDomain}
+      >
+        {children}
+      </PageLayoutContent>
+    </CartProvider>
+  );
+}
 
-  useEffect(() => {
-    function handleCartUpdated(event) {
-      if (event.detail) setCartOverride(event.detail);
-    }
-
-    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated);
-    return () => window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated);
-  }, []);
+function PageLayoutContent({
+  children,
+  footer,
+  header,
+  isLoggedIn,
+  localization,
+  publicStoreDomain,
+}) {
+  const {cart} = useLiveCart();
 
   return (
     <Aside.Provider>
-      <CartAside cart={currentCart} />
+      <CartAside />
       <SearchAside />
       <WishlistAside />
       <MobileMenuAside
@@ -50,7 +63,7 @@ export function PageLayout({
       {header && (
         <Header
           header={header}
-          cart={currentCart}
+          cart={cart}
           isLoggedIn={isLoggedIn}
           localization={localization}
           publicStoreDomain={publicStoreDomain}
@@ -67,19 +80,12 @@ export function PageLayout({
   );
 }
 
-/**
- * @param {{cart: PageLayoutProps['cart']}}
- */
-function CartAside({cart}) {
+function CartAside() {
+  const {cart} = useLiveCart();
+
   return (
     <Aside type="cart" heading="Shopping Bag">
-      <Suspense fallback={<div className="site-loading">Loading cart...</div>}>
-        <Await resolve={cart}>
-          {(cart) => {
-            return <CartMain cart={cart} layout="aside" />;
-          }}
-        </Await>
-      </Suspense>
+      <CartMain cart={cart} layout="aside" />
     </Aside>
   );
 }
