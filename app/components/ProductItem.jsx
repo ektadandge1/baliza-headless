@@ -5,6 +5,7 @@ import {AddToCartButton} from '~/components/AddToCartButton';
 import {ProductRating} from '~/components/ProductRating';
 import {JudgeMePreviewBadge} from '~/components/JudgeMe';
 import {WishlistButton} from '~/components/WishlistButton';
+import {useAside} from '~/components/Aside';
 import {getSwatchColor} from '~/lib/colorSwatches';
 import {useVariantUrl} from '~/lib/variants';
 
@@ -18,6 +19,7 @@ import {useVariantUrl} from '~/lib/variants';
  * }}
  */
 export function ProductItem({product, loading, ratings, judgeMeBadge}) {
+  const {open} = useAside();
   const variantUrl = useVariantUrl(product.handle);
   const image = product.featuredImage;
   const variants = product.variants?.nodes ?? [];
@@ -29,6 +31,9 @@ export function ProductItem({product, loading, ratings, judgeMeBadge}) {
   );
   const selectedVariant =
     findVariantForOptions(variants, selectedOptions) ?? initialVariant;
+  const cartVariant = selectedVariant
+    ? getCartVariant(selectedVariant, product)
+    : null;
   const price = selectedVariant?.price ?? product.priceRange?.minVariantPrice;
   const compareAt =
     selectedVariant?.compareAtPrice ??
@@ -99,8 +104,17 @@ export function ProductItem({product, loading, ratings, judgeMeBadge}) {
           {canQuickAdd ? (
             <AddToCartButton
               className="btn-add"
-              lines={[{merchandiseId: selectedVariant.id, quantity: 1}]}
-              onClick={(event) => event.stopPropagation()}
+              lines={[
+                {
+                  merchandiseId: selectedVariant.id,
+                  quantity: 1,
+                  selectedVariant: cartVariant,
+                },
+              ]}
+              onClick={(event) => {
+                event.stopPropagation();
+                open('cart');
+              }}
             >
               Add to Cart
             </AddToCartButton>
@@ -243,6 +257,19 @@ function isOptionValueAvailable(variants, selectedOptions, optionName, value) {
 
 function isColorOption(name) {
   return /colou?r/i.test(name);
+}
+
+function getCartVariant(variant, product) {
+  return {
+    ...variant,
+    image: variant.image ?? product.featuredImage,
+    product: variant.product ?? {
+      handle: product.handle,
+      id: product.id,
+      title: product.title,
+      vendor: product.vendor,
+    },
+  };
 }
 
 function getVariantLabel(variant) {

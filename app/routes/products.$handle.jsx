@@ -736,6 +736,20 @@ const PRODUCT_PAGE_CARD_FRAGMENT = `#graphql
           amount
           currencyCode
         }
+        image {
+          __typename
+          id
+          url
+          altText
+          width
+          height
+        }
+        product {
+          handle
+          id
+          title
+          vendor
+        }
       }
     }
   }
